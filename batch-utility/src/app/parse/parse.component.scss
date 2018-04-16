@@ -1,0 +1,31 @@
+// .header-6 {
+//     height: 1.5rem;
+//     div, .nav-icon {
+//         height: 1.5rem;
+//     }
+//     .branding{
+//         height: 1.1rem;
+//         margin-top: .2rem;
+//         margin-left:-0.5rem;
+//     }
+// }
+
+.underline {
+    text-decoration: underline;
+}
+
+clr-signpost-content {
+    width:360px;
+}
+
+input:not(.no-margin), div.select, label.api-message {
+    margin-top: 12px !important;
+}
+
+clr-checkbox, .radio-inline {
+    margin-top: 16px !important;
+}
+
+.block {
+    display: block;
+}

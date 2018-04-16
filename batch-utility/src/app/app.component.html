@@ -1,0 +1,32 @@
+<div class="main-container">
+    <header class="header-2">
+        <div class="branding">
+            <a class="nav-link">
+                <clr-icon shape="home" size="24"></clr-icon>
+                <span class="title">Project Clarity</span>
+            </a>
+        </div>
+        <div class="header-actions">
+            <a (click)="onMinimize()" class="nav-link nav-icon">
+                <clr-icon shape="window-min"></clr-icon>
+            </a>
+            <a *ngIf="max" (click)="onRestore()" class="nav-link nav-icon">
+                <clr-icon shape="window-restore"></clr-icon>
+            </a>
+            <a *ngIf="!max" (click)="onMax()" class="nav-link nav-icon">
+                <clr-icon shape="window-max"></clr-icon>
+            </a>
+            <a (click)="onExit()" class="nav-link nav-icon">
+                <clr-icon shape="window-close"></clr-icon>
+            </a>
+        </div>
+    </header>
+    <div class="content-container">
+        <div class="content-area">
+            <router-outlet></router-outlet>
+        </div>
+    </div>
+    <div class="clr-footer">
+        © 2018 Copyright Sovren Group, Inc. All rights reserved
+    </div>
+</div>

@@ -1,0 +1,66 @@
+.home-wrapper {
+    height: 100%;
+    width: 100%;
+    position: relative;
+
+    .title-wrapper {
+        width: 100%;
+        height: 20%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 36px;
+        font-weight: 900;
+        color: white;
+        padding: 0 45px;
+        padding-top: 30px;
+        line-height: normal;
+
+        img {
+            height: 75px;
+            margin-left: 25px
+        }
+    }
+
+    .login-wrapper {
+        all: unset;
+        box-sizing: inherit;
+    }
+
+    .login-wrapper,
+    .create-wrapper {
+        width: 49%;
+        height: 80%;
+        display: inline-block;
+        padding: 10% 6%;
+
+        label {
+            font-weight: 200;
+            font-family: Metropolis, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+            font-size: 32px;
+            letter-spacing: normal;
+            line-height: 36px;
+        }
+    }
+
+    .login-group
+    {
+        display: flex;
+        flex-direction: column;
+        padding-top: 48px;
+
+        input, .select {
+            cursor: auto;
+            margin: 6px 0 18px 0;
+        }
+
+        option {
+            background: #292929;
+        }
+
+        button:not(.btn-link) {
+            margin: 72px 0 6px 0;
+            max-width: none;
+        }
+    }
+}

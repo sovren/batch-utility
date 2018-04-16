@@ -1,0 +1,23 @@
+<div class="home-wrapper">
+    <div class="title-wrapper">
+        SaaS with
+        <img src="https://www.sovren.com/images/footer/logo-desktop.svg">
+    </div>
+    <div class="col-md-6 center">
+        <div class="login-group">
+            <input class="white-text" type="text" placeholder="Account Id" [(ngModel)]="account.accountId" list="li">
+            <input class="white-text" type="text" placeholder="Service Key" [(ngModel)]="account.serviceKey" list="li">
+            <clr-checkbox name="rememberMe" id="rememberMe" [(ngModel)]="account.rememberMe">
+                Remember Me
+            </clr-checkbox>
+            <clr-alert [clrAlertClosable]="false" clrAlertType="danger" *ngIf="errorMessage">
+                <div class="alert-item">
+                    <span class="alert-text">
+                        {{errorMessage}}
+                    </span>
+                </div>
+            </clr-alert>
+            <button class="btn btn-primary" [disabled]="!account.accountId || !account.serviceKey" (click)="submitForm()">Log In</button>
+        </div>
+    </div>
+</div>

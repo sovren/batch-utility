@@ -1,0 +1,19 @@
+/* You can add global styles to this file, and also import other style files */
+
+body, .main-container, .clr-footer {
+    background: #292929 url(assets/pattern-grid-dark.jpg) repeat left top !important;
+}
+
+.center{
+    margin-left: auto;
+    margin-right: auto;
+}
+
+select[multiple] {
+    background: #292929 !important;
+}
+
+.clr-footer {
+    margin-left: auto;
+    margin-right: auto;
+}
