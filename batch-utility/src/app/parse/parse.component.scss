@@ -1,15 +1,3 @@
-// .header-6 {
-//     height: 1.5rem;
-//     div, .nav-icon {
-//         height: 1.5rem;
-//     }
-//     .branding{
-//         height: 1.1rem;
-//         margin-top: .2rem;
-//         margin-left:-0.5rem;
-//     }
-// }
-
 .underline {
     text-decoration: underline;
 }
@@ -28,4 +16,8 @@ clr-checkbox, .radio-inline {
 
 .block {
     display: block;
+}
+
+.modal-dialog .modal-content {
+    background-color:#292929 !important;
 }

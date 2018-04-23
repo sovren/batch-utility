@@ -56,18 +56,18 @@ export class ParseComponent implements OnInit {
   indexes: Index[] = new Array<Index>();
 
   //parsing summary
-  pool: ResourcePool;
   filesToParse: any[] = new Array<any>();
+  totalFiles: number = 0;
+  pool: ResourcePool;
   costPerParse: number = 1;
   cancellationToken: CancelationToken = new CancelationToken();
-
-  //counts
-  totalFiles: number = 0;
   summaryResults: ParseSummaryResults = new ParseSummaryResults();
 
 
+
+
   constructor(private router: Router, private storageSvc: StorageHelper, private fileSystem: FileSystem,
-    private restSvc: RestService, private electronSvc: ElectronService, private zone: NgZone) { }
+    private restSvc: RestService, public electronSvc: ElectronService, private zone: NgZone) { }
 
   async ngOnInit() {
     this.loggedInAccount = this.storageSvc.getLocalLoginInfo();
@@ -118,7 +118,6 @@ export class ParseComponent implements OnInit {
 
 
   async onSettingsSubmit() {
-
     if (this.loading)
       return;
 
@@ -142,7 +141,6 @@ export class ParseComponent implements OnInit {
 
     if (this.settings.geoCodeProvider != GeoCodeProvider.None && !this.settings.geoCodeKey)
       this.costPerParse += .5;
-
   }
 
   private saveSettings() {
@@ -185,12 +183,19 @@ export class ParseComponent implements OnInit {
     while (!token.isCancelled() && documents.length > 0 && (conn = await this.pool.getConnection()) && conn) {
       let document = documents.pop();
       let documentFileName = path.basename(document);
-      let result = conn.parse(this.settings, document).then((response: ParseResponse) => {
+      let result = conn.parse(this.settings, document).then(async (response: ParseResponse) => {
         if (this.account.CreditsRemaining > response.Value.CreditsRemaining) //async causes this to jump around slightly
           this.account.CreditsRemaining = response.Value.CreditsRemaining;
         this.summaryResults.numParsedSuccessfully++;
         this.summaryResults.numParsed++;
         this.summaryResults.percentComplete = Math.round((this.summaryResults.numParsed * 100) / this.totalFiles);
+
+        //have to query for pool size every 1,000 requests per TOS
+        if (this.summaryResults.numParsed % 1000 == 0) {
+          this.account = (await this.restSvc.getAccount()).Value;
+          this.pool.poolSize = this.account.MaximumConcurrentRequests;
+        }
+
         this.pool.release(conn);
         this.appLogger.log(`${documentFileName} parsed successfully`)
 
@@ -242,27 +247,12 @@ export class ParseComponent implements OnInit {
     this.electronSvc.shell.openExternal(url);
   }
 
-  backToMenu() {
-    this.router.navigate(['./Home']);
-  }
-
   backToSettings() {
     if (this.parsing && !this.cancellationToken.isCancelled())
       this.cancellationToken.cancel();
     this.submitted = false;
   }
 
-  stopParsing() {
-    this.cancellationToken.cancel();
-  }
-
-  onShowIndexModal() {
-    this.showIndexModal = true;
-  }
-
-  onCloseIndexModal() {
-    this.showIndexModal = false;
-  }
 
   async saveIndex() {
     if (this.indexSaving)

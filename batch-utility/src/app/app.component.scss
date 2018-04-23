@@ -1,0 +1,46 @@
+.header-2 {
+    background-color: #e6e6e6;// #292929;
+    -webkit-user-select: none;
+    -webkit-app-region: drag;
+    //border-bottom: 1px solid black;
+    max-height: 35px;
+
+    .branding{
+        -webkit-app-region: no-drag;
+    }
+    
+    div {
+        max-height:35px;
+        color: #3e3e3e;
+    }
+
+    a {
+        height: auto !important;
+        -webkit-app-region: no-drag;
+    }
+
+    span, a {
+        color: #3e3e3e
+    }
+
+    .title {
+        font-size: 14px;
+    }
+}
+
+.separator {
+    width: 1px;
+    height: 20px;
+    margin-right: 9px;
+    background-color: #3e3e3e;
+}
+
+.logo {
+    height: 24px;
+    padding-right: 15px;
+}
+
+a.nav-link.nav-icon:hover {
+    color: black;
+    background-color: #B4B4B4;
+}

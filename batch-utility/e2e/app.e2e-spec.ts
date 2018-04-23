@@ -1,6 +1,6 @@
 import { AppPage } from './app.po';
 
-describe('batch-utility App', () => {
+describe('sovren-batch-utility App', () => {
   let page: AppPage;
 
   beforeEach(() => {

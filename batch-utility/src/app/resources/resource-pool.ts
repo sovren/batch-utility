@@ -3,7 +3,7 @@ import { IConnection, IConnectionContructor } from "./connection-interface";
 
 export class ResourcePool {
     private pool: IConnection[] = new Array<IConnection>();
-    private poolSize: number = 10;
+    public poolSize: number = 10;
   
     constructor(restSvc: RestService, poolSize: number, connectionType: IConnectionContructor) {
     this.poolSize = poolSize;

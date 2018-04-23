@@ -17,3 +17,17 @@ select[multiple] {
     margin-left: auto;
     margin-right: auto;
 }
+
+h1 {
+    margin: 0px !important;
+}
+
+.modal-dialog .modal-content, .signpost-flex-wrap{
+    background-color:#292929 !important;
+}
+
+.popover-pointer:before {
+    border-bottom: .5rem solid #292929 !important;
+    border-left: 1px solid black !important;
+    top: 2px !important;
+}

@@ -4,33 +4,34 @@ import { ElectronService } from "ngx-electron";
 
 @Component({
     selector: 'app-root',
+    styleUrls: [ './app.component.scss'],
     templateUrl: './app.component.html'
 })
 export class AppComponent { 
     showHeader: boolean;
     max: boolean;
+    window: Electron.BrowserWindow;
+
     constructor(private _router: Router, private electronSvc: ElectronService){
-        if (this._router.url.indexOf('signin') > 0)
-            this.showHeader = true;
+        this.window = this.electronSvc.remote.getCurrentWindow();
     }
 
     onMinimize(){
-
-        console.log('exit')
+        this.window.minimize();
     }
 
     onRestore(){
         this.max = false;
-        console.log('exit')
+        this.window.restore();
     }
 
     onMax(){
         this.max = true;
-        console.log('exit')
+        this.window.maximize();
     }
 
     onExit(){
-        console.log('exit')
+        this.window.close();
     }
     
 }

@@ -209,7 +209,7 @@
                                 <option *ngFor="let item of indexes" [value]="item.Name">{{item.Name}}</option>
                             </select>
                         </div>
-                        <button type="button" class="btn btn-outline btn-sm" (click)="onShowIndexModal()">Create new Index</button>
+                        <button type="button" class="btn btn-outline btn-sm" (click)="showIndexModal = true">Create new Index</button>
                     </div>
 
 
@@ -257,12 +257,13 @@
                         <clr-checkbox [clrInline]="true" name="saveSettings" [(ngModel)]="settings.saveSettings"></clr-checkbox>
                     </div>
 
-                    <button type="button" class="btn btn-primary" (click)="backToMenu()">Back</button>
+                    <button type="button" class="btn btn-primary" [routerLink]="['../Home']">Back</button>
                     <button type="submit" [clrLoading]="loading" class="btn btn-primary" [disabled]="settingsForm.form.invalid">Next</button>
                 </section>
             </form>
             <form #summaryForm="ngForm" (ngSubmit)="onStartParsing()" [hidden]="!submitted">
-                <clr-alert *ngIf="(totalFiles * costPerParse) > account.CreditsRemaining" [clrAlertType]="'alert-warning'" [clrAlertClosable]="false" [clrAlertAppLevel]="true">
+                <clr-alert *ngIf="(totalFiles * costPerParse) > account.CreditsRemaining" [clrAlertType]="'alert-warning'" [clrAlertClosable]="false"
+                    [clrAlertAppLevel]="true">
                     <clr-alert-item>
                         <span class="alert-text">
                             Not enough credits to parse this many documents
@@ -352,19 +353,24 @@
                 </div>
                 <br />
                 <button type="button" class="btn btn-primary" (click)="backToSettings()">Back</button>
-                <button type="submit" class="btn btn-primary" [disabled]="summaryForm.form.invalid || (totalFiles * costPerParse) > account.CreditsRemaining">Parse!</button>
-                <button type="button" *ngIf="parsing && !cancellationToken.isCancelled()" class="btn btn-primary" (click)="stopParsing()">Stop!</button>
+                <button type="submit" class="btn btn-primary" *ngIf="summaryResults.numParsed == 0 && !parsing" 
+                [disabled]="summaryForm.form.invalid || (totalFiles * costPerParse) > account.CreditsRemaining">Parse!</button>
+                <button type="submit" class="btn btn-info" *ngIf="summaryResults.numParsed > 0 && !parsing" 
+                    [disabled]="summaryForm.form.invalid || (totalFiles * costPerParse) > account.CreditsRemaining">Restart</button>
+                <button type="button" *ngIf="summaryResults.percentComplete == 100" class="btn btn-primary" (click)="electronSvc.remote.getCurrentWindow().close()">Exit</button>
+                <button type="button" *ngIf="parsing && !cancellationToken.isCancelled()" class="btn btn-info" (click)="cancellationToken.cancel()">Stop!</button>
                 <span *ngIf="cancellationToken.isCancelled() && summaryResults.percentComplete != 100 && summaryResults.numParsed > 0">Parsing stopped!</span>
+                <h4 style="display:inline" *ngIf="summaryResults.percentComplete == 100">Parsing complete!</h4>
                 <br />
                 <br />
-                <div *ngIf="parsing || summaryResults.numParsed > 0" class="progress labeled">
+                <div *ngIf="parsing || summaryResults.numParsed > 0" class="progress flash labeled">
                     <progress max="100" value="{{summaryResults.percentComplete}}" [attr.data-displayval]="summaryResults.percentComplete + '%'"></progress>
                     <span>{{summaryResults.percentComplete}}%</span>
                 </div>
                 <br />
                 <div *ngIf="parsing || summaryResults.numParsed > 0">
-                    <span *ngIf="summaryResults.numParsed > 0">Elapsed Time: {{summaryResults.elapsedSeconds | minutesSeconds}} ({{(summaryResults.numParsed / summaryResults.elapsedSeconds) | number : '1.0-0'}}
-                        resumes/sec)
+                    <span *ngIf="summaryResults.numParsed > 0">Elapsed Time: {{summaryResults.elapsedSeconds | minutesSeconds}} ({{(summaryResults.numParsed / summaryResults.elapsedSeconds)
+                        | number : '1.0-0'}} resumes/sec)
                     </span>
                     <br/>
                     <br />
@@ -376,8 +382,6 @@
                     <br />
                     <span class="block" *ngIf="summaryResults.numIndexingErrors > 0 || summaryResults.numConversionErrors > 0 || summaryResults.numGeocodingErrors > 0 || summaryResults.numParseErrors > 0">*Check logs to view errors</span>
                 </div>
-                <br />
-                <br />
             </form>
 
         </div>

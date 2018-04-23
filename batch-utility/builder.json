@@ -1,0 +1,11 @@
+{
+    "osx" : {
+      "title": "Sovren Batch Utility",
+      "icon": "icons/mac/icon.icns",
+      "icon-size": 128
+    },
+    "win" : {
+      "title" : "Sovren Batch Utility",
+      "icon" : "icons/win/icon.ico"
+    }
+  }
