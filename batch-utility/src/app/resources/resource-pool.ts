@@ -6,7 +6,7 @@ export class ResourcePool {
     public poolSize: number = 10;
   
     constructor(restSvc: RestService, poolSize: number, connectionType: IConnectionContructor) {
-    this.poolSize = poolSize;
+    this.poolSize = Math.min(10,poolSize); //max of 10
       for (let i = 0; i < poolSize; i++) {
         this.pool.push(new connectionType(restSvc));
       }

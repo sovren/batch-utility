@@ -7,7 +7,7 @@ const path = (<any>window).require('path');
 export class FileSystem {
 
     constructor() { }
-    async getFilesInDirectory(dir: string): Promise<any[]> {
+    async getFilesInDirectory(dir: string): Promise<string[]> {
         return new Promise<any[]>((resolve, reject) => {
             var walk = function (dir, done) {
                 var results = [];

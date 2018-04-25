@@ -17,12 +17,14 @@ import { StorageHelper } from '../utilities/storage';
 export class SignInComponent {
   account: AccountUser = new AccountUser();
   errorMessage: string;
+  loading:boolean = false;
 
   constructor(private storage: StorageHelper, private router: Router, private restSvc: RestService) { 
     this.account = this.storage.getLoginInfo();
   }
 
   async submitForm(){
+    this.loading = true;
     this.errorMessage = null;
 
     try {
@@ -37,6 +39,7 @@ export class SignInComponent {
         this.errorMessage = "An unexpected error occurred.";
       }
     }
+    this.loading = false;
   }
 }
 

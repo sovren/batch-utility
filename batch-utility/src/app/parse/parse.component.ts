@@ -56,7 +56,7 @@ export class ParseComponent implements OnInit {
   indexes: Index[] = new Array<Index>();
 
   //parsing summary
-  filesToParse: any[] = new Array<any>();
+  filesToParse: string[] = new Array<string>();
   totalFiles: number = 0;
   pool: ResourcePool;
   costPerParse: number = 1;
@@ -168,7 +168,7 @@ export class ParseComponent implements OnInit {
     this.parsing = false;
   }
 
-  async parseDocuments(documents: any[], token: CancelationToken): Promise<void> {
+  async parseDocuments(documents: string[], token: CancelationToken): Promise<void> {
     this.initializeOutputDirectories();
     this.appLogger = new AppLogger(this.settings.outputDirectory);
     let conn: IConnection;
@@ -193,7 +193,7 @@ export class ParseComponent implements OnInit {
         //have to query for pool size every 1,000 requests per TOS
         if (this.summaryResults.numParsed % 1000 == 0) {
           this.account = (await this.restSvc.getAccount()).Value;
-          this.pool.poolSize = this.account.MaximumConcurrentRequests;
+          this.pool.poolSize = Math.min(10,this.account.MaximumConcurrentRequests);
         }
 
         this.pool.release(conn);
@@ -266,6 +266,7 @@ export class ParseComponent implements OnInit {
     newIndex.Name = this.indexToSave;
     newIndex.IndexType = indexType;
     this.indexes.push(newIndex)
+    this.settings.index = newIndex.Name;
     this.indexSaving = false;
     this.showIndexModal = false;
   }

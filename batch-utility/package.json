@@ -9,16 +9,16 @@
   "scripts": {
     "ng": "ng",
     "start": "concurrently \"ng serve\" \"npm run electron\"",
-    "build": "ng build --prod", 
+    "build": "ng build --prod",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "electron": "electron .", 
+    "electron": "electron .",
     "electron-build": "ng build --prod && electron .",
     "package-clean": "rimraf ./packages",
     "package-win": "ng build --prod && electron-builder --win",
     "package-mac": "ng build --prod && electron-builder --mac",
-    "package-linux": "electron-builder --linux",
+    "package-linux": "ng build --prod && electron-builder --linux",
     "package-wl": "electron-builder -wl"
   },
   "private": true,
@@ -77,13 +77,13 @@
     "artifactName": "${productName} Setup.${ext}",
     "directories": {
       "buildResources": "icons",
-      "output":"packages",
-      "app":"."
+      "output": "packages",
+      "app": "."
     },
     "files": [
-        "dist/**/*",
-        "icons/**/*",
-        "main.js"
+      "dist/**/*",
+      "icons/**/*",
+      "main.js"
     ],
     "win": {
       "target": "nsis",
@@ -94,9 +94,9 @@
       "artifactName": "${productName}.${ext}",
       "category": "Utility"
     },
-    "mac" : {
-      "icon" : "icons/mac/icon.icns",
+    "mac": {
+      "icon": "icons/mac/icon.icns",
       "target": "dmg"
     }
- }
+  }
 }

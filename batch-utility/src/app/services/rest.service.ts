@@ -21,6 +21,8 @@ export class RestService {
     async loginAccount(accountUser: AccountUser): Promise<GetAccountResponse> {
         if (accountUser.rememberMe)
             this.storage.setLoginInfo(accountUser);
+        else
+            this.storage.setLoginInfo(new AccountUser());
         this.storage.setLocalLoginInfo(accountUser);
         let url = this.baseUrlPlus('account');
         try {

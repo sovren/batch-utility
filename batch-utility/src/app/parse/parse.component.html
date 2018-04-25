@@ -259,6 +259,7 @@
 
                     <button type="button" class="btn btn-primary" [routerLink]="['../Home']">Back</button>
                     <button type="submit" [clrLoading]="loading" class="btn btn-primary" [disabled]="settingsForm.form.invalid">Next</button>
+                    <span *ngIf="loading">Preparing documents. This could take a while...</span>
                 </section>
             </form>
             <form #summaryForm="ngForm" (ngSubmit)="onStartParsing()" [hidden]="!submitted">
@@ -349,7 +350,7 @@
                 <br />
                 <div>
                     <strong>Current Credits</strong>
-                    <label>{{account.CreditsRemaining}}</label>
+                    <label>{{account.CreditsRemaining.toLocaleString()}}</label>
                 </div>
                 <br />
                 <button type="button" class="btn btn-primary" (click)="backToSettings()">Back</button>
@@ -370,17 +371,21 @@
                 <br />
                 <div *ngIf="parsing || summaryResults.numParsed > 0">
                     <span *ngIf="summaryResults.numParsed > 0">Elapsed Time: {{summaryResults.elapsedSeconds | minutesSeconds}} ({{(summaryResults.numParsed / summaryResults.elapsedSeconds)
-                        | number : '1.0-0'}} resumes/sec)
+                        | number : '1.0-0'}} documents/sec)
                     </span>
+                    <!-- <br />
+                    <span *ngIf="summaryResults.numParsed > 0 && summaryResults.percentComplete != 100">Estimated Time Remaining: {{(((100 - summaryResults.percentComplete) / summaryResults.percentComplete) * summaryResults.elapsedSeconds) | number : '1.0-0' | minutesSeconds}}</span>
+                     -->
                     <br/>
                     <br />
-                    <span class="block">Total Parsed Successfully: {{summaryResults.numParsedSuccessfully}}</span>
-                    <span class="block">Total Parsing Errors: {{summaryResults.numParseErrors}}</span>
-                    <span class="block" *ngIf="summaryResults.numGeocodingErrors > 0">Total Geocoding Errors: {{summaryResults.numGeocodingErrors}}</span>
-                    <span class="block" *ngIf="summaryResults.numConversionErrors > 0">Total Conversion Errors: {{summaryResults.numConversionErrors}}</span>
-                    <span class="block" *ngIf="summaryResults.numIndexingErrors > 0">Total Indexing Errors: {{summaryResults.numIndexingErrors}}</span>
+                    <span class="block">Total Parsed Successfully: {{summaryResults.numParsedSuccessfully.toLocaleString()}}</span>
+                    <span class="block">Total Parsing Errors: {{summaryResults.numParseErrors.toLocaleString()}}</span>
+                    <span class="block" *ngIf="summaryResults.numGeocodingErrors > 0">Total Geocoding Errors: {{summaryResults.numGeocodingErrors.toLocaleString()}}</span>
+                    <span class="block" *ngIf="summaryResults.numConversionErrors > 0">Total Conversion Errors: {{summaryResults.numConversionErrors.toLocaleString()}}</span>
+                    <span class="block" *ngIf="summaryResults.numIndexingErrors > 0">Total Indexing Errors: {{summaryResults.numIndexingErrors.toLocaleString()}}</span>
                     <br />
-                    <span class="block" *ngIf="summaryResults.numIndexingErrors > 0 || summaryResults.numConversionErrors > 0 || summaryResults.numGeocodingErrors > 0 || summaryResults.numParseErrors > 0">*Check logs to view errors</span>
+                    <span class="block" *ngIf="summaryResults.numIndexingErrors > 0 || summaryResults.numConversionErrors > 0 || summaryResults.numGeocodingErrors > 0 || summaryResults.numParseErrors > 0">
+                    *Check <a href="javascript:void(0)" (click)="electronSvc.shell.openItem(settings.outputDirectory + '/logs')" >logs</a> to view errors</span>
                 </div>
             </form>
 

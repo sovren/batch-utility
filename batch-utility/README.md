@@ -1,27 +1,29 @@
-# BatchUtility
+# Sovren Batch Parser Utility
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.7.0.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.7.0 and [Electron](https://github.com/electron/electron)   version 1.8.4
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `npm run electron-build` to build and run the application.  
 
-## Code scaffolding
+To view live changes in the application while developing, you can edit the `main.js` file. In the `createWindow()` method, update the url in `win.loadURL` to be `http://localhost:4200`. You may also need to change the `app.on('ready',` method to include a timeout so the app has time to start - `app.on('ready', ()=>{setTimeout(createWindow, 10000)})`
+Next run `npm run start` to concurrently serve the angular app and run it inside electron.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
 
 ## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
+Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag or `npm run build` for a production build.
 
-## Running unit tests
+## Packaging
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+This project uses [electron-builder](https://www.electron.build) to build and package the application for distribution. The application can be packaged for Windows, Mac, or Linux using one of the following scripts
+- `npm run package-win`
+- `npm run package-mac`
+- `npm run package-linux`
 
-## Running end-to-end tests
+Notes: Mac packages must be created from a device running macOS. Windows and Linux (`.AppImage`) packages can be created from both Windows and Linux devices. To generate a Linux `.deb` package, you must change the build target and run the script on a Linux device. For more information, visit [Multi-Platform Builds](https://www.electron.build/multi-platform-build)
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
 
 ## Further help
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+For additional help, please reach out to Sovren Support at <support@sovren.com>

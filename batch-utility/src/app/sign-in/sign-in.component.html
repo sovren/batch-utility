@@ -17,7 +17,7 @@
                     </span>
                 </div>
             </clr-alert>
-            <button class="btn btn-primary" [disabled]="!account.accountId || !account.serviceKey" (click)="submitForm()">Log In</button>
+            <button [clrLoading]="loading" class="btn btn-primary" [disabled]="!account.accountId || !account.serviceKey" (click)="submitForm()">Log In</button>
         </div>
     </div>
 </div>
