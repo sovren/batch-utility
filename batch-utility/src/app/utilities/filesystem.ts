@@ -39,9 +39,26 @@ export class FileSystem {
         })
     }
 
+    getAllSubDirectories(directory: string){
+        let dirs = fs.readdirSync(directory).filter(f => fs.statSync(path.join(directory, f)).isDirectory())
+    }
+
+    ensureDirectoryExistence(filePath) {
+        var dirname = path.dirname(filePath);
+        if (fs.existsSync(dirname))
+          return true;
+        this.ensureDirectoryExistence(dirname);
+        fs.mkdirSync(dirname);
+    }
+
     makeDirIfNotExists(directory: string) {
         if (!fs.existsSync(directory)) {
             fs.mkdirSync(directory);
         }
     }
+
+    directoryExists(path: string) {
+        return fs.existsSync(path);
+    }
+
 }

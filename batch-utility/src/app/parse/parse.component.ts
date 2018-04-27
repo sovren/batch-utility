@@ -40,6 +40,7 @@ export class ParseComponent implements OnInit {
   parsing: boolean = false;
   submitted: boolean = false;
   aimEnabled: boolean = false;
+  errorMessage: string;
 
   appLogger: AppLogger;
 
@@ -121,6 +122,17 @@ export class ParseComponent implements OnInit {
     if (this.loading)
       return;
 
+    this.errorMessage = null;
+
+    if (!this.fileSystem.directoryExists(this.settings.inputDirectory)) {
+      this.errorMessage = 'Source Path does not exist'
+      return;
+    }
+    if (!this.fileSystem.directoryExists(this.settings.outputDirectory)) {
+      this.errorMessage = 'Output Path does not exist'
+      return;
+    }
+
     this.account = (await this.restSvc.getAccount()).Value;
     this.loading = true;
     this.filesToParse = new Array<any>();
@@ -182,7 +194,7 @@ export class ParseComponent implements OnInit {
     const results = [];
     while (!token.isCancelled() && documents.length > 0 && (conn = await this.pool.getConnection()) && conn) {
       let document = documents.pop();
-      let documentFileName = path.basename(document);
+      let documentFileName = document.replace(this.settings.inputDirectory.replace(/\//g,'/'),'').replace(/^\\/g, '').replace(/^\//g, '')
       let result = conn.parse(this.settings, document).then(async (response: ParseResponse) => {
         if (this.account.CreditsRemaining > response.Value.CreditsRemaining) //async causes this to jump around slightly
           this.account.CreditsRemaining = response.Value.CreditsRemaining;
@@ -288,6 +300,7 @@ export class ParseComponent implements OnInit {
     if (this.settings.outputRtf)
       this.fileSystem.makeDirIfNotExists(path.join(this.settings.outputDirectory, 'rtf'));
   }
+  
 
 
 }

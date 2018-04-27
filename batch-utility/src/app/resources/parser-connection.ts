@@ -26,8 +26,7 @@ export class ResumeParserConnection implements IConnection {
                 resumeParseRequest.Configuration = settings.configurationString;
 
             this.restSvc.parseResume(resumeParseRequest).then((response: ParseResponse) => {
-                let fileName = path.basename(filePath);
-                handleParseResponse(response, settings, fileName)
+                handleParseResponse(response, settings, filePath)
                 resolve(response);
             }).catch((e) => {
                 console.log(e);
@@ -60,8 +59,7 @@ export class JobParserConnection implements IConnection {
             }
 
             this.restSvc.parseJob(jobParseRequest).then((response: ParseResponse) => {
-                let fileName = path.basename(filePath);
-                handleParseResponse(response, settings, fileName)
+                handleParseResponse(response, settings, filePath)
                 resolve(response);
             }).catch((e) => {
                 reject(e);
@@ -100,30 +98,71 @@ function setupCommonFields(settings: ParseSettings, filePath: string): BaseReque
     if (settings.index) {
         request.IndexingOptions = new IndexingOptions();
         request.IndexingOptions.IndexId = settings.index;
-        
-        let fileName = filePath.substring(0, filePath.lastIndexOf('.')).split('\\').pop().split('/').pop();
-        request.IndexingOptions.DocumentId = fileName.replace(/[^0-9a-zA-Z_]/g, '');
+
+        //make sure we get the right file name
+        let fileName = getStrippedFileName(filePath, settings.inputDirectory);
+        request.IndexingOptions.DocumentId = fileName;
     }
     return request;
 }
+
+function getStrippedFileName(filePath: string, inputDirectory: string) : string {
+    return filePath.replace(inputDirectory.replace(/\//g,'/'),'').replace(/^\\/g, '').replace(/^\//g, '').replace(/[^0-9a-zA-Z_-]/g, '_')
+}
+
 
 function getBase64(file: string): string {
     var bitmap = fs.readFileSync(file);
     return new Buffer(bitmap).toString('base64');
 }
 
-function handleParseResponse(response: ParseResponse, settings: ParseSettings, fileName: string){
-    if (settings.outputFormat == OutputFormat.XML)
-        fs.writeFileSync(`${path.join(settings.outputDirectory, 'xml')}/${fileName}.xml`, response.Value.ParsedDocument, 'utf8');
-    else
-        fs.writeFileSync(`${path.join(settings.outputDirectory, 'json')}/${fileName}.json`, response.Value.ParsedDocument, 'utf8');
+function handleParseResponse(response: ParseResponse, settings: ParseSettings, fullInputPath: string){
+    //let fileName = '';
+    //if (settings.keepFolderStructure){
+        let fileName = fullInputPath.replace(settings.inputDirectory.replace(/\//g,'/'),'');
 
-    if (settings.outputHtml && response.Value.Html)
-        fs.writeFileSync(`${path.join(settings.outputDirectory, 'html')}/${fileName}.html`, response.Value.Html, 'utf8');
-    if (settings.outputPdf && response.Value.Pdf)
-        fs.writeFileSync(`${path.join(settings.outputDirectory, 'pdf')}/${fileName}.pdf`, response.Value.Pdf, 'utf8');
-    if (settings.outputRtf && response.Value.Rtf)
-        fs.writeFileSync(`${path.join(settings.outputDirectory, 'rtf')}/${fileName}.rtf`, response.Value.Rtf, 'utf8');
+    //}
+    //else
+        //fileName = getStrippedFileName(fullInputPath, settings.inputDirectory);
+    
+    if (settings.outputFormat == OutputFormat.XML) {
+        writeFile('xml', response.Value.ParsedDocument);
+    }
+    else {
+        writeFile('json', response.Value.ParsedDocument);
+    }
+
+    if (settings.outputHtml && response.Value.Html) {
+        writeFile('html', response.Value.Html);
+    }
+    if (settings.outputPdf && response.Value.Pdf) {
+        writeFile('pdf', response.Value.Pdf);
+    }
+    if (settings.outputRtf && response.Value.Rtf) {
+        writeFile('rtf', response.Value.Rtf);
+    }
+
+    function writeFile(fileType: string, document: string){
+        let fullOutputPath = `${path.join(settings.outputDirectory, fileType)}/${fileName}.${fileType}`;
+        //if (settings.keepFolderStructure)
+            ensureDirectoryExistence(fullOutputPath);
+        
+        if (fileType == 'pdf')
+            fs.writeFileSync(fullOutputPath, document, 'base64');
+        else
+            fs.writeFileSync(fullOutputPath, document, 'utf8');
+    }
 }
+
+
+
+function ensureDirectoryExistence(filePath) {
+    var dirname = path.dirname(filePath);
+    if (fs.existsSync(dirname)) {
+      return true;
+    }
+    ensureDirectoryExistence(dirname);
+    fs.mkdirSync(dirname);
+  }
 
 

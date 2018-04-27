@@ -16,6 +16,7 @@ export class ParseSettings {
     index: string;
     inputDirectory: string;
     outputDirectory: string;
+    keepFolderStructure: boolean;
     outputFormat: OutputFormat;
 
     saveSettings: boolean;

@@ -19,7 +19,6 @@ function createWindow () {
     width: width, 
     height: height,
     backgroundColor: '#ffffff',
-    //frame: false,
     icon: path.join(__dirname, 'icons/png/64x64.png')
   })
 
