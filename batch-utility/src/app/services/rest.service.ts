@@ -13,6 +13,8 @@ import { ParseResponse } from '../models/responses/parse';
 import { ParseResumeRequest } from '../models/requests/parse-resume';
 import { ParseJobRequest } from '../models/requests/parse-job';
 import { StorageHelper } from '../utilities/storage';
+import { IndexRequest } from '../models/requests/multiple-index';
+import { IndexMultipleResponse } from '../models/responses/multiple-index';
 
 @Injectable()
 export class RestService {
@@ -87,8 +89,10 @@ export class RestService {
             let headers = new HttpHeaders({ 'Accept': request.OutputFormat });
             let options = { headers: headers, responseType: 'text' as 'text' };
             let response = await this.http.post(url, request, options).first().toPromise(); 
-            let jsonResponse = JsonXmlHelper.XmlToJson(this.parseXML(response));
+            let xml = this.parseXML(response); 
+            let jsonResponse = JsonXmlHelper.XmlToJson(xml);
             let result = JSON.parse(JSON.stringify(jsonResponse.ResponseModelOfParsedResumeResponseModel)) as ParseResponse;
+            result.Value.ParsedDocument = xml.getElementsByTagName('ParsedDocument')[0].textContent;  //make sure we get the right parseddocument. this is most important
             return result;
         }
     }
@@ -103,10 +107,17 @@ export class RestService {
             let headers = new HttpHeaders({ 'Accept': request.OutputFormat });
             let options = { headers: headers, responseType: 'text' as 'text' };
             let response = await this.http.post(url, request, options).first().toPromise(); 
-            let jsonResponse = JsonXmlHelper.XmlToJson(this.parseXML(response));
+            let xml = this.parseXML(response); 
+            let jsonResponse = JsonXmlHelper.XmlToJson(xml);
             let result = JSON.parse(JSON.stringify(jsonResponse.ResponseModelOfParsedJobOrderResponseModel)) as ParseResponse;
+            result.Value.ParsedDocument = xml.getElementsByTagName('ParsedDocument')[0].textContent; //make sure we get the right parseddocument. this is most important
             return result;
         }
+    }
+
+    async indexDocuments(request: IndexRequest[], indexName: string): Promise<IndexMultipleResponse>{
+        let url = this.baseUrlPlus('index', indexName, 'documents');
+        return await this.http.post<IndexMultipleResponse>(url, request).first().toPromise(); 
     }
 
     private parseXML(val) {

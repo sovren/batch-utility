@@ -95,14 +95,9 @@ function setupCommonFields(settings: ParseSettings, filePath: string): BaseReque
         request.SkillsData = settings.skills;
     if (settings.normalizations)
         request.NormalizerData = settings.normalizations;
-    if (settings.index) {
-        request.IndexingOptions = new IndexingOptions();
-        request.IndexingOptions.IndexId = settings.index;
+        
+    // per the TOS do not index documents during bulk parsing
 
-        //make sure we get the right file name
-        let fileName = getStrippedFileName(filePath, settings.inputDirectory);
-        request.IndexingOptions.DocumentId = fileName;
-    }
     return request;
 }
 
@@ -117,6 +112,7 @@ function getBase64(file: string): string {
 }
 
 function handleParseResponse(response: ParseResponse, settings: ParseSettings, fullInputPath: string){
+    // uncomment below to flatten folder structure
     //let fileName = '';
     //if (settings.keepFolderStructure){
         let fileName = fullInputPath.replace(settings.inputDirectory.replace(/\//g,'/'),'');

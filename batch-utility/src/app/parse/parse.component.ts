@@ -1,3 +1,5 @@
+import { IndexMultipleResponse } from './../models/responses/multiple-index';
+import { IndexRequest } from './../models/requests/multiple-index';
 import { ParseSummaryResults } from './../models/parse-summary-results';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, Input, NgZone, OnInit } from '@angular/core';
@@ -184,12 +186,13 @@ export class ParseComponent implements OnInit {
     this.initializeOutputDirectories();
     this.appLogger = new AppLogger(this.settings.outputDirectory);
     let conn: IConnection;
+    let docsToIndex = new Array<IndexRequest>();
 
     let startTime = Date.now();
     let interval = window.setInterval(() => {
       let delta = Date.now() - startTime;
       this.summaryResults.elapsedSeconds = Math.floor(delta / 1000)
-    }, 1000)
+    }, 1000);
 
     const results = [];
     while (!token.isCancelled() && documents.length > 0 && (conn = await this.pool.getConnection()) && conn) {
@@ -209,13 +212,19 @@ export class ParseComponent implements OnInit {
         }
 
         this.pool.release(conn);
-        this.appLogger.log(`${documentFileName} parsed successfully`)
+        this.appLogger.log(`${documentFileName} parsed successfully`);
+
+        //send index request every 100
+        if (this.settings.index) {
+          let documentId = documentFileName.replace(/[^0-9a-zA-Z_-]/g, '_');
+          docsToIndex.push(new IndexRequest(documentId, response.Value.ParsedDocument));
+          if (this.summaryResults.numParsedSuccessfully % 100 == 0){
+            this.indexDocuments(docsToIndex.splice(0, 100));
+          }
+        }
+
 
         //check for any other errors and log
-        if (response.Value.IndexingResponse && response.Value.IndexingResponse.Code != 'Success') {
-          this.summaryResults.numIndexingErrors++;
-          this.appLogger.logIndexError(`${documentFileName}`, response.Value.IndexingResponse);
-        }
         if (response.Value.GeocodeResponse && response.Value.GeocodeResponse.Code != 'Success' && response.Value.GeocodeResponse.Code != 'InsufficientData') {
           this.summaryResults.numGeocodingErrors++;
           this.appLogger.logGeocodeError(`${documentFileName}`, response.Value.GeocodeResponse);
@@ -251,8 +260,39 @@ export class ParseComponent implements OnInit {
       results.push(result);
     }
 
-    await Promise.all(results)
+    await Promise.all(results);
+
+    //index remaining documents
+    if (docsToIndex.length > 0)
+      await this.indexDocuments(docsToIndex);
+
     window.clearInterval(interval);
+  }
+
+  async indexDocuments(requests: IndexRequest[]){
+    this.restSvc.indexDocuments(requests, this.settings.index).then((response: IndexMultipleResponse) => {
+      for (var i = 0; i < response.Value.length; i++){
+        if (response.Value[i].Code != 'Success'){
+          this.summaryResults.numIndexingErrors++;
+          this.appLogger.logIndexError(`${response.Value[i].DocumentId}`, response.Value[i]);
+        }
+        else {
+          this.summaryResults.numIndexed++;
+          this.appLogger.log(`${response.Value[i].DocumentId} indexed successfully`);
+        }
+      }
+    }).catch((err: HttpErrorResponse) => {
+      this.summaryResults.numIndexingErrors = this.summaryResults.numIndexingErrors + requests.length;
+      if (err.error && err.error.Info) {
+        this.appLogger.logIndexError('Bulk Index Failed', err.error.Info)
+      }
+      else if (err.error) {
+        this.appLogger.logIndexError('Bulk Index Failed', err.error)
+      }
+      else {
+        this.appLogger.logIndexError('Bulk Index Failed', err.message)
+      }
+    });
   }
 
   openExternal(url: string) {

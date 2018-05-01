@@ -400,6 +400,7 @@
                     <br/>
                     <br />
                     <span class="block">Total Parsed Successfully: {{summaryResults.numParsedSuccessfully.toLocaleString()}}</span>
+                    <span *ngIf="settings.index" class="block">Total Indexed Successfully: {{summaryResults.numIndexed.toLocaleString()}}</span>
                     <span class="block">Total Parsing Errors: {{summaryResults.numParseErrors.toLocaleString()}}</span>
                     <span class="block" *ngIf="summaryResults.numGeocodingErrors > 0">Total Geocoding Errors: {{summaryResults.numGeocodingErrors.toLocaleString()}}</span>
                     <span class="block" *ngIf="summaryResults.numConversionErrors > 0">Total Conversion Errors: {{summaryResults.numConversionErrors.toLocaleString()}}</span>

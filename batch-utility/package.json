@@ -75,6 +75,7 @@
     "productName": "Sovren Batch Parser",
     "copyright": "© 2018 Copyright Sovren Group, Inc. All rights reserved",
     "artifactName": "${productName} Setup.${ext}",
+    "publish": null,
     "directories": {
       "buildResources": "icons",
       "output": "packages",

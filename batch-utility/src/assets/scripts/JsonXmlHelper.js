@@ -1,4 +1,4 @@
-﻿// Copyright © 2017 Sovren Group, Inc. All rights reserved.
+﻿// Copyright © 2018 Sovren Group, Inc. All rights reserved.
 // This file is provided for use and modification by, or on behalf of, Sovren licensees
 // within the terms of their license of Sovren products. This file shall not be distributed
 // or published, in whole or in part, for any other purpose without prior written permission
@@ -23,47 +23,6 @@ JsonXmlHelper.GetValue = function (obj, propName, bXML, bText) {
 
 // Changes XML to JSON
 JsonXmlHelper.XmlToJson = function (xml) {
-    //these types should be arrays, even if the xml only contains one node
-    var arrayTypesList = [
-        "Competency",
-        "Achievement",
-        "Article",
-        "Association",
-        "Book",
-        "ContactMethod",
-        "SecurityCredential",
-        "EmployerOrg",
-        "LicenseOrCertification",
-        "Language",
-        "OtherPublication",
-        "Patent",
-        "PositionHistory",
-        "Reference",
-        "ResumeAdditionalItem",
-        "SchoolOrInstitution",
-        "ServiceDetail",
-        "SupportingMaterials",
-        "SpeakingEvent",
-        "FormattedPublicationDescription",
-        "IdValue",
-        "sov:Subtitle",
-        "sov:Warning",
-        "sov:TaxonomyRoot",
-        "sov:Taxonomy",
-        "sov:Subtaxonomy",
-        "sov:Skill",
-        "sov:ChildSkill",
-        "Taxonomy"
-    ];
-
-    var arrayContainerLists = [
-        "UnweightedCategoryScores",
-        "Matches",
-        "SuggestedCategoryWeights",
-        "TermsFound"
-    ];
-
-
     // Create the return object
     var obj = null;
 
@@ -76,10 +35,6 @@ JsonXmlHelper.XmlToJson = function (xml) {
                 var attribute = xml.attributes.item(j);
                 obj["@" + attribute.nodeName] = attribute.nodeValue;
             }
-        }
-        else if (arrayContainerLists.indexOf(xml.nodeName) != -1) {
-            //this object is an array
-            obj = [];
         }
     }
     else if (xml.nodeType == 3) { // text
@@ -113,13 +68,7 @@ JsonXmlHelper.XmlToJson = function (xml) {
                 obj.push(JsonXmlHelper.XmlToJson(item));
             }
             else if (typeof (obj[nodeName]) == "undefined") {
-                if (arrayTypesList.indexOf(nodeName) == -1) {
-                    obj[nodeName] = JsonXmlHelper.XmlToJson(item);//add an object
-                }
-                else {
-                    obj[nodeName] = [];
-                    obj[nodeName].push(JsonXmlHelper.XmlToJson(item));//add an array w/ one object
-                }
+                obj[nodeName] = JsonXmlHelper.XmlToJson(item);//add an object
             }
             else {
                 if (typeof (obj[nodeName].push) == "undefined") {

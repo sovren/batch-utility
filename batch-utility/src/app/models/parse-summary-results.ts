@@ -1,5 +1,6 @@
 export class ParseSummaryResults{
     numParsed: number = 0;
+    numIndexed: number = 0;
     numParsedSuccessfully: number = 0;
     numParseErrors: number = 0;
     numIndexingErrors: number = 0;
