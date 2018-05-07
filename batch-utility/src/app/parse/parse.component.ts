@@ -115,7 +115,6 @@ export class ParseComponent implements OnInit {
         }
       });
     })
-    this.summaryResults = new ParseSummaryResults();
     return false;
   }
 
@@ -203,7 +202,7 @@ export class ParseComponent implements OnInit {
           this.account.CreditsRemaining = response.Value.CreditsRemaining;
         this.summaryResults.numParsedSuccessfully++;
         this.summaryResults.numParsed++;
-        this.summaryResults.percentComplete = Math.round((this.summaryResults.numParsed * 100) / this.totalFiles);
+        this.summaryResults.percentComplete = Math.floor((this.summaryResults.numParsed * 100) / this.totalFiles);
 
         //have to query for pool size every 1,000 requests per TOS
         if (this.summaryResults.numParsed % 1000 == 0) {
@@ -214,12 +213,12 @@ export class ParseComponent implements OnInit {
         this.pool.release(conn);
         this.appLogger.log(`${documentFileName} parsed successfully`);
 
-        //send index request every 100
+        //send index request every 50
         if (this.settings.index) {
           let documentId = documentFileName.replace(/[^0-9a-zA-Z_-]/g, '_');
           docsToIndex.push(new IndexRequest(documentId, response.Value.ParsedDocument));
-          if (this.summaryResults.numParsedSuccessfully % 100 == 0){
-            this.indexDocuments(docsToIndex.splice(0, 100));
+          if (this.summaryResults.numParsedSuccessfully % 50 == 0){
+            this.indexDocuments(docsToIndex.splice(0, 50));
           }
         }
 
@@ -302,6 +301,8 @@ export class ParseComponent implements OnInit {
   backToSettings() {
     if (this.parsing && !this.cancellationToken.isCancelled())
       this.cancellationToken.cancel();
+      
+    this.summaryResults = new ParseSummaryResults();
     this.submitted = false;
   }
 
