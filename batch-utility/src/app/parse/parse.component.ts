@@ -35,36 +35,36 @@ export class ParseComponent implements OnInit {
   @Input() documentType: DocumentType;
 
 
-  loggedInAccount: AccountUser;
+  loggedInAccount: AccountUser; //accountId and service key
   account: Account = new Account();
-  settings: ParseSettings = new ParseSettings();
-  loading: boolean = false;
-  parsing: boolean = false;
-  submitted: boolean = false;
-  aimEnabled: boolean = false;
+  settings: ParseSettings = new ParseSettings(); //setting to be sent to api with parsing request
+  loading: boolean = false; //shows loading icon when counting files in output directory
+  parsing: boolean = false; //used to show the progress bar
+  submitted: boolean = false; //shows summary page
+  aimEnabled: boolean = false;  //calculates credits and shows index dropdown
   errorMessage: string;
 
-  appLogger: AppLogger;
+  appLogger: AppLogger; //handles logging and directory setup
 
   //index
-  showIndexModal: boolean = false;
-  indexToSave: string;
+  showIndexModal: boolean = false; //shows modal to create new index
+  indexToSave: string; 
   indexSaving: boolean = false;
 
   //selects
-  geoCodeProviders = GeoCodeProvider;
+  geoCodeProviders = GeoCodeProvider; 
   outputFormats = OutputFormat;
   normalizations: KeyValuePair[] = new Array<KeyValuePair>();
   skills: KeyValuePair[] = new Array<KeyValuePair>();
   indexes: Index[] = new Array<Index>();
 
-  //parsing summary
-  filesToParse: string[] = new Array<string>();
-  totalFiles: number = 0;
-  pool: ResourcePool;
-  costPerParse: number = 1;
-  cancellationToken: CancelationToken = new CancelationToken();
-  summaryResults: ParseSummaryResults = new ParseSummaryResults();
+  //parsing summary page and results
+  filesToParse: string[] = new Array<string>(); //all files to be parsed
+  totalFiles: number = 0; //count of documents to be parsed
+  pool: ResourcePool; //handles async requests and pooling
+  costPerParse: number = 1; //default cost for resume parsing
+  cancellationToken: CancelationToken = new CancelationToken(); //cancels parsing
+  summaryResults: ParseSummaryResults = new ParseSummaryResults(); //successes, errors, etc.
 
 
 
@@ -74,32 +74,32 @@ export class ParseComponent implements OnInit {
 
   async ngOnInit() {
     this.loggedInAccount = this.storageSvc.getLocalLoginInfo();
-    this.account = (await this.restSvc.getAccount()).Value;
+    this.account = (await this.restSvc.getAccount()).Value; // get account so we know how many concurrent requests you can use
 
-    this.skills = (await this.restSvc.getSkills()).Value;
-    this.normalizations = (await this.restSvc.getNormalizations()).Value;
+    this.skills = (await this.restSvc.getSkills()).Value; //gets available skill lists
+    this.normalizations = (await this.restSvc.getNormalizations()).Value; //gets available normalizations lists
 
     try {
-      this.getIndexes();
+      this.getIndexes(); //gets available indexes for matching
       this.aimEnabled = true;
     }
-    catch (ex) {
+    catch (ex) { //if this call fails, then AIM is not enabled
       this.aimEnabled = false;
     }
 
     if (this.documentType == DocumentType.Resumes) {
-      this.settings = this.storageSvc.getBulkResumeParseSettings();
+      this.settings = this.storageSvc.getBulkResumeParseSettings(); //settings can be saved on local machine
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, ResumeParserConnection);
     }
     else if (this.documentType == DocumentType.JobOrders) {
-      this.settings = this.storageSvc.getBulkJobOrderParseSettings()
+      this.settings = this.storageSvc.getBulkJobOrderParseSettings() //settings can be saved on local machine
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, JobParserConnection);
     }
   }
 
   async getIndexes() {
-    let indexes = await this.restSvc.getIndexes();
-    this.indexes = indexes.Value
+    let indexes = await this.restSvc.getIndexes(); //gets available indexes for matching
+    this.indexes = indexes.Value //filter out 'public' indexes or indexes that aren't for the type of document you are trying to match
       .filter(index => index.OwnerId == this.loggedInAccount.accountId 
         && index.IndexType == (this.documentType == DocumentType.Resumes ? 'Resume' : 'Job'));
   }
@@ -140,23 +140,27 @@ export class ParseComponent implements OnInit {
 
     this.saveSettings();
 
-    this.fileSystem.getFilesInDirectory(this.settings.inputDirectory).then((fileList) => {
+    //iterate through all files and subfolders in output directory
+    this.fileSystem.getFilesInDirectory(this.settings.inputDirectory).then((fileList) => { 
       this.filesToParse = fileList;
       this.loading = false;
       this.submitted = true;
       this.totalFiles = fileList.length;
     });
 
-    if (this.documentType == DocumentType.Resumes && !this.aimEnabled)
+    //job order parsing always costs 2 credits. If AIM is disabled, resume parsing costs 1 credit, otherwise 2
+    //note: changing this here won't actually affect the cost of the parsing transactions. it is for display purposes only
+    if (this.documentType == DocumentType.Resumes && !this.aimEnabled) 
       this.costPerParse = 1;
     else
       this.costPerParse = 2;
 
+    //using geocoding without providing your own key costs an extra .5 credit per parse
     if (this.settings.geoCodeProvider != GeoCodeProvider.None && !this.settings.geoCodeKey)
       this.costPerParse += .5;
   }
 
-  private saveSettings() {
+  private saveSettings() { //can save settings to be used next time the app loads
     if (!this.settings.saveSettings) {
       if (this.documentType == DocumentType.Resumes)
         this.storageSvc.setBulkResumeParseSettings(new ParseSettings());
@@ -173,20 +177,21 @@ export class ParseComponent implements OnInit {
   }
 
 
-  async onStartParsing() {
+  async onStartParsing() { 
     this.parsing = true;
-    this.summaryResults = new ParseSummaryResults();
-    this.cancellationToken = new CancelationToken();
+    this.summaryResults = new ParseSummaryResults(); //reset summary results if they aren't already
+    this.cancellationToken = new CancelationToken(); //reset cancellation token
     let result = await this.parseDocuments(this.filesToParse.slice(0), this.cancellationToken);
     this.parsing = false;
   }
 
   async parseDocuments(documents: string[], token: CancelationToken): Promise<void> {
-    this.initializeOutputDirectories();
+    this.initializeOutputDirectories(); //create all required output folders 
     this.appLogger = new AppLogger(this.settings.outputDirectory);
     let conn: IConnection;
     let docsToIndex = new Array<IndexRequest>();
 
+    //start a timer to track the elapsed time and calculate docs/sec
     let startTime = Date.now();
     let interval = window.setInterval(() => {
       let delta = Date.now() - startTime;
@@ -194,36 +199,45 @@ export class ParseComponent implements OnInit {
     }, 1000);
 
     const results = [];
+
+    //wait for a connection to be available before sending another parse request
+    //connections are based on your account's MaximumConcurrentRequests
+    //check cancellation token before each request
     while (!token.isCancelled() && documents.length > 0 && (conn = await this.pool.getConnection()) && conn) {
       let document = documents.pop();
+      //get filename from the full path. windows and linux use different slashes so we have to cover both
       let documentFileName = document.replace(this.settings.inputDirectory.replace(/\//g,'/'),'').replace(/^\\/g, '').replace(/^\//g, '')
       let result = conn.parse(this.settings, document).then(async (response: ParseResponse) => {
-        if (this.account.CreditsRemaining > response.Value.CreditsRemaining) //async causes this to jump around slightly
+        if (this.account.CreditsRemaining > response.Value.CreditsRemaining) //async causes this to jump around slightly. just show the lowest value for display purposes
           this.account.CreditsRemaining = response.Value.CreditsRemaining;
         this.summaryResults.numParsedSuccessfully++;
         this.summaryResults.numParsed++;
-        this.summaryResults.percentComplete = Math.floor((this.summaryResults.numParsed * 100) / this.totalFiles);
+        this.summaryResults.percentComplete = Math.floor((this.summaryResults.numParsed * 100) / this.totalFiles); //round down so the progress bar doesn't finish early
 
-        //have to query for pool size every 1,000 requests per TOS
+        //MUST query for MaximumConcurrentRequests every 1,000 requests per TOS
         if (this.summaryResults.numParsed % 1000 == 0) {
           this.account = (await this.restSvc.getAccount()).Value;
           this.pool.poolSize = Math.min(10,this.account.MaximumConcurrentRequests);
         }
 
+        //after it's done parsing, the connection can be released so it can be used for another parsing transaction while we continue with further processing
         this.pool.release(conn);
         this.appLogger.log(`${documentFileName} parsed successfully`);
 
-        //send index request every 50
+        //During batch transactions, index separately from parsing
         if (this.settings.index) {
+          //documentID MUST only contain letters, numbers, underscores, and dashes
           let documentId = documentFileName.replace(/[^0-9a-zA-Z_-]/g, '_');
           docsToIndex.push(new IndexRequest(documentId, response.Value.ParsedDocument));
-          if (this.summaryResults.numParsedSuccessfully % 50 == 0){
+
+          //index documents in batches of 50. Bigger will sometimes cause the payload to be too big and return a 404
+          if (this.summaryResults.numParsedSuccessfully % 50 == 0){ 
             this.indexDocuments(docsToIndex.splice(0, 50));
           }
         }
 
 
-        //check for any other errors and log
+        //If parsed document came back succesfully, there might still be other errors, such as with geocoding or conversion
         if (response.Value.GeocodeResponse && response.Value.GeocodeResponse.Code != 'Success' && response.Value.GeocodeResponse.Code != 'InsufficientData') {
           this.summaryResults.numGeocodingErrors++;
           this.appLogger.logGeocodeError(`${documentFileName}`, response.Value.GeocodeResponse);
@@ -241,35 +255,56 @@ export class ParseComponent implements OnInit {
           this.appLogger.logConversionError(`${documentFileName} failed to convert to rtf`, response.Value.RtfCode);
         }
 
-      }).catch((err: HttpErrorResponse) => {
+      }).catch((err: HttpErrorResponse) => { //an error here means the whole parse failed. no file will be saved to output directory
         this.summaryResults.numParsed++;
         this.summaryResults.numParseErrors++;
         if (err.error && err.error.Info) {
-          this.appLogger.logParseError(`${documentFileName}`, err.error.Info)
+          this.appLogger.logParseError(`${documentFileName}`, err.error.Info);
+          //Per the Acceptable Use Policy, do not resubmit any document that contained a return code from the Service indicating that the document was corrupt 
+          //or of an unsupported type, or the document text field in the response was empty
+          if (err.error.Info.Message.indexOf('Missing FileBytes parameter in your request') >= 0 ||
+            err.error.Info.Message.indexOf('ovNoText') >= 0) {
+              this.moveToDoNotProcessDirectory(document, documentFileName);
+            }
+
         }
         else if (err.error) {
-          this.appLogger.logParseError(`${documentFileName}`, err.error)
+          this.appLogger.logParseError(`${documentFileName}`, err.error);
         }
         else {
-          this.appLogger.logParseError(`${documentFileName}`, err.message)
+          this.appLogger.logParseError(`${documentFileName}`, err.message);
         }
+
+        //Per the Acceptable Use Policy, do not resubmit any document that returned an exception 
+        //which included this phrase: "System.Net.WebException: The underlying connection was closed".
+        if (err.message.indexOf('The underlying connection was closed') >= 0)
+          this.moveToDoNotProcessDirectory(document, documentFileName);
 
         this.pool.release(conn);
       });
       results.push(result);
     }
 
-    await Promise.all(results);
+    //wait for the last few connections to finish
+    await Promise.all(results); 
 
     //index remaining documents
     if (docsToIndex.length > 0)
       await this.indexDocuments(docsToIndex);
 
+    //stop the timer
     window.clearInterval(interval);
+  }
+
+  moveToDoNotProcessDirectory(fullPath:string, fileName:string){
+    var doNotProcessDirectory = path.join(this.settings.inputDirectory, 'FAILED AND DO NOT RESUBMIT');
+    this.fileSystem.makeDirIfNotExists(doNotProcessDirectory);
+    this.fileSystem.moveFile(fullPath, path.join(doNotProcessDirectory, fileName));
   }
 
   async indexDocuments(requests: IndexRequest[]){
     this.restSvc.indexDocuments(requests, this.settings.index).then((response: IndexMultipleResponse) => {
+       //check the result of each index. some may have had errors
       for (var i = 0; i < response.Value.length; i++){
         if (response.Value[i].Code != 'Success'){
           this.summaryResults.numIndexingErrors++;
@@ -280,7 +315,7 @@ export class ParseComponent implements OnInit {
           this.appLogger.log(`${response.Value[i].DocumentId} indexed successfully`);
         }
       }
-    }).catch((err: HttpErrorResponse) => {
+    }).catch((err: HttpErrorResponse) => { //error here means the entire batch failed. Likely the payload was too big
       this.summaryResults.numIndexingErrors = this.summaryResults.numIndexingErrors + requests.length;
       if (err.error && err.error.Info) {
         this.appLogger.logIndexError('Bulk Index Failed', err.error.Info)
@@ -294,11 +329,11 @@ export class ParseComponent implements OnInit {
     });
   }
 
-  openExternal(url: string) {
+  openExternal(url: string) { //opens url in user's browser
     this.electronSvc.shell.openExternal(url);
   }
 
-  backToSettings() {
+  backToSettings() { //when back button is clicked, cancel the ongoing parsing job
     if (this.parsing && !this.cancellationToken.isCancelled())
       this.cancellationToken.cancel();
       
@@ -318,8 +353,8 @@ export class ParseComponent implements OnInit {
     newIndex.OwnerId = this.loggedInAccount.accountId;
     newIndex.Name = this.indexToSave;
     newIndex.IndexType = indexType;
-    this.indexes.push(newIndex)
-    this.settings.index = newIndex.Name;
+    this.indexes.push(newIndex);
+    this.settings.index = newIndex.Name; //set the index to be used to the newly created one
     this.indexSaving = false;
     this.showIndexModal = false;
   }

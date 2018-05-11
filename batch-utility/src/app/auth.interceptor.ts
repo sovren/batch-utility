@@ -27,6 +27,7 @@ export class AuthInterceptor implements HttpInterceptor {
     getAuthHeaders(headers: HttpHeaders) {
         let account = this.storage.getLocalLoginInfo();
         
+        //append Sovren-AccountId and Sovren-ServiceKey to EVERY request
         return headers
         .append('Sovren-AccountId', account.accountId)
         .append('Sovren-ServiceKey', account.serviceKey);

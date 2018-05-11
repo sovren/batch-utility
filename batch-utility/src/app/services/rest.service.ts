@@ -21,7 +21,7 @@ export class RestService {
     constructor(private http: HttpClient, private storage: StorageHelper) { }
 
     async loginAccount(accountUser: AccountUser): Promise<GetAccountResponse> {
-        if (accountUser.rememberMe)
+        if (accountUser.rememberMe) //store credentials on local machine if remember me is enabled
             this.storage.setLoginInfo(accountUser);
         else
             this.storage.setLoginInfo(new AccountUser());
@@ -31,7 +31,7 @@ export class RestService {
             let accountResponse = await this.http.get<GetAccountResponse>(url).first().toPromise();
             return accountResponse;
         }
-        catch(e) {
+        catch(e) { //if they credentials failed, check the EU endpoint
             url = url.replace('rest.resumeparsing','eu-rest.resumeparsing');
             let accountResponse = await this.http.get<GetAccountResponse>(url).first().toPromise();
             accountUser.euRegion = true; //if that worked they are in eu
@@ -131,7 +131,7 @@ export class RestService {
         if (accountUser.euRegion)
             return `https://eu-rest.resumeparsing.com/v8/${fullPath}`;
 
-        return `https://rest.resumeparsing.com/v8/${fullPath}`;
+        return `http://rest.resumeparsing.com/v8/${fullPath}`;
     }
 
 }

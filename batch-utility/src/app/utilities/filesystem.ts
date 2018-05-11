@@ -10,6 +10,9 @@ export class FileSystem {
     async getFilesInDirectory(dir: string): Promise<string[]> {
         return new Promise<any[]>((resolve, reject) => {
             var walk = function (dir, done) {
+                if (dir.indexOf('FAILED AND DO NOT RESUBMIT') >= 0) //documents in this folder failed for reasons that should not allow resubmission per the Acceptable Use Policy
+                    done(null, []);
+
                 var results = [];
                 fs.readdir(dir, function (err, list) {
                     if (err) return done(err);
@@ -39,10 +42,6 @@ export class FileSystem {
         })
     }
 
-    getAllSubDirectories(directory: string){
-        let dirs = fs.readdirSync(directory).filter(f => fs.statSync(path.join(directory, f)).isDirectory())
-    }
-
     ensureDirectoryExistence(filePath) {
         var dirname = path.dirname(filePath);
         if (fs.existsSync(dirname))
@@ -59,6 +58,10 @@ export class FileSystem {
 
     directoryExists(path: string) {
         return fs.existsSync(path);
+    }
+
+    moveFile(input:string, output:string) {
+        fs.rename(input, output);
     }
 
 }

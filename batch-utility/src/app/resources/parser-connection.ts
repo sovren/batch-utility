@@ -101,49 +101,37 @@ function setupCommonFields(settings: ParseSettings, filePath: string): BaseReque
     return request;
 }
 
-function getStrippedFileName(filePath: string, inputDirectory: string) : string {
-    return filePath.replace(inputDirectory.replace(/\//g,'/'),'').replace(/^\\/g, '').replace(/^\//g, '').replace(/[^0-9a-zA-Z_-]/g, '_')
-}
-
-
 function getBase64(file: string): string {
     var bitmap = fs.readFileSync(file);
     return new Buffer(bitmap).toString('base64');
 }
 
 function handleParseResponse(response: ParseResponse, settings: ParseSettings, fullInputPath: string){
-    // uncomment below to flatten folder structure
-    //let fileName = '';
-    //if (settings.keepFolderStructure){
-        let fileName = fullInputPath.replace(settings.inputDirectory.replace(/\//g,'/'),'');
 
-    //}
-    //else
-        //fileName = getStrippedFileName(fullInputPath, settings.inputDirectory);
+    //get full path to save the parsed document
+    //this will strip the input directory from the original file path, but keep the subfolders
+    let fileName = fullInputPath.replace(settings.inputDirectory.replace(/\//g,'/'),'');
+
     
-    if (settings.outputFormat == OutputFormat.XML) {
+    if (settings.outputFormat == OutputFormat.XML)
         writeFile('xml', response.Value.ParsedDocument);
-    }
-    else {
+    else
         writeFile('json', response.Value.ParsedDocument);
-    }
 
-    if (settings.outputHtml && response.Value.Html) {
+    if (settings.outputHtml && response.Value.Html)
         writeFile('html', response.Value.Html);
-    }
-    if (settings.outputPdf && response.Value.Pdf) {
+        
+    if (settings.outputPdf && response.Value.Pdf)
         writeFile('pdf', response.Value.Pdf);
-    }
-    if (settings.outputRtf && response.Value.Rtf) {
+
+    if (settings.outputRtf && response.Value.Rtf)
         writeFile('rtf', response.Value.Rtf);
-    }
 
     function writeFile(fileType: string, document: string){
         let fullOutputPath = `${path.join(settings.outputDirectory, fileType)}/${fileName}.${fileType}`;
-        //if (settings.keepFolderStructure)
-            ensureDirectoryExistence(fullOutputPath);
+        ensureDirectoryExistence(fullOutputPath);
         
-        if (fileType == 'pdf')
+        if (fileType == 'pdf') //pdfs are returned as base64
             fs.writeFileSync(fullOutputPath, document, 'base64');
         else
             fs.writeFileSync(fullOutputPath, document, 'utf8');
@@ -152,7 +140,7 @@ function handleParseResponse(response: ParseResponse, settings: ParseSettings, f
 
 
 
-function ensureDirectoryExistence(filePath) {
+function ensureDirectoryExistence(filePath) { //creates directory if it doesn't exist already
     var dirname = path.dirname(filePath);
     if (fs.existsSync(dirname)) {
       return true;
