@@ -218,7 +218,7 @@ export class ParseComponent implements OnInit {
         if (this.summaryResults.numParsed % 1000 == 0) {
           //per the Acceptable Use Policy calling GetAccountInfo is ONLY acceptable in conjunction with Batch Transactions like in this app
           this.account = (await this.restSvc.getAccount()).Value;
-          this.pool.poolSize = Math.min(10,this.account.MaximumConcurrentRequests);
+          this.pool.poolSize = this.account.MaximumConcurrentRequests;
         }
 
         //after it's done parsing, the connection can be released so it can be used for another parsing transaction while we continue with further processing
@@ -264,6 +264,7 @@ export class ParseComponent implements OnInit {
           //Per the Acceptable Use Policy, do not resubmit any document that contained a return code from the Service indicating that the document was corrupt 
           //or of an unsupported type, or the document text field in the response was empty
           if (err.error.Info.Message.indexOf('Missing FileBytes parameter in your request') >= 0 ||
+            err.error.Info.Message.indexOf('ovCorrupt') >= 0 ||
             err.error.Info.Message.indexOf('ovNoText') >= 0) {
               this.moveToDoNotProcessDirectory(document, documentFileName);
             }
@@ -363,10 +364,15 @@ export class ParseComponent implements OnInit {
   initializeOutputDirectories() {
     this.fileSystem.makeDirIfNotExists(path.join(this.settings.outputDirectory, 'logs'));
 
+    if (this.documentType == DocumentType.Resumes) //pii is only scrubbed from resumes
+      this.fileSystem.makeDirIfNotExists(path.join(this.settings.outputDirectory, 'scrubbed'));
+
     if (this.settings.outputFormat == OutputFormat.XML)
       this.fileSystem.makeDirIfNotExists(path.join(this.settings.outputDirectory, 'xml'));
     else
       this.fileSystem.makeDirIfNotExists(path.join(this.settings.outputDirectory, 'json'));
+
+
 
     if (this.settings.outputHtml)
       this.fileSystem.makeDirIfNotExists(path.join(this.settings.outputDirectory, 'html'));

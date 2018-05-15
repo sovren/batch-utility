@@ -118,6 +118,9 @@ function handleParseResponse(response: ParseResponse, settings: ParseSettings, f
     else
         writeFile('json', response.Value.ParsedDocument);
 
+    if (response.Value.ScrubbedParsedDocument)
+        writeFile('scrubbed', response.Value.ScrubbedParsedDocument, 'json');
+
     if (settings.outputHtml && response.Value.Html)
         writeFile('html', response.Value.Html);
         
@@ -127,8 +130,10 @@ function handleParseResponse(response: ParseResponse, settings: ParseSettings, f
     if (settings.outputRtf && response.Value.Rtf)
         writeFile('rtf', response.Value.Rtf);
 
-    function writeFile(fileType: string, document: string){
-        let fullOutputPath = `${path.join(settings.outputDirectory, fileType)}/${fileName}.${fileType}`;
+    function writeFile(folder: string, document: string, fileType:string = null){
+        if (fileType == null)
+            fileType = folder;
+        let fullOutputPath = `${path.join(settings.outputDirectory, folder)}/${fileName}.${fileType}`;
         ensureDirectoryExistence(fullOutputPath);
         
         if (fileType == 'pdf') //pdfs are returned as base64

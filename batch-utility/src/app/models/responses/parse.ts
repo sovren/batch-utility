@@ -20,6 +20,7 @@ export class ParseResponseValue {
     Pdf: string;
     PdfCode: string;
     ParsedDocument: string;
+    ScrubbedParsedDocument: string;
     GeocodeResponse: ResponseInfo;
     IndexingResponse: ResponseInfo;
 }
