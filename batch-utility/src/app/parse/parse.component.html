@@ -167,6 +167,7 @@
                         </label>
                         <div *ngIf="normalizations.length > 0" class="select">
                             <select id="normalizations" name="normalizations" [(ngModel)]="settings.normalizations">
+                                <option [value]=""></option>
                                 <option *ngFor="let item of normalizations" [value]="item.Name">{{item.Name}}</option>
                             </select>
                         </div>
@@ -186,6 +187,7 @@
                         </label>
                         <div *ngIf="skills.length > 0" class="select multiple">
                             <select id="skills" name="skills" [(ngModel)]="settings.skills" multiple>
+                                    <option [value]=""></option>
                                 <option *ngFor="let item of skills" [value]="item.Key">{{item.Name}}</option>
                             </select>
                         </div>
@@ -206,6 +208,7 @@
                         </label>
                         <div class="select">
                             <select id="index" name="index" [(ngModel)]="settings.index">
+                                <option [value]=""></option>
                                 <option *ngFor="let item of indexes" [value]="item.Name">{{item.Name}}</option>
                             </select>
                         </div>
