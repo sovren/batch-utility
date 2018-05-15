@@ -214,8 +214,9 @@ export class ParseComponent implements OnInit {
         this.summaryResults.numParsed++;
         this.summaryResults.percentComplete = Math.floor((this.summaryResults.numParsed * 100) / this.totalFiles); //round down so the progress bar doesn't finish early
 
-        //MUST query for MaximumConcurrentRequests every 1,000 requests per TOS
+        //MUST query for MaximumConcurrentRequests every 1,000 requests per the Acceptable Use Policy
         if (this.summaryResults.numParsed % 1000 == 0) {
+          //per the Acceptable Use Policy calling GetAccountInfo is ONLY acceptable in conjunction with Batch Transactions like in this app
           this.account = (await this.restSvc.getAccount()).Value;
           this.pool.poolSize = Math.min(10,this.account.MaximumConcurrentRequests);
         }
