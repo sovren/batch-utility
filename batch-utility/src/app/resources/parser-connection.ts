@@ -1,3 +1,10 @@
+/****************************************************************************************************************************
+ * This is a sample application designed by Sovren to comply with the Terms of Service (http://resumeparsing.com/TOS.htm)
+ * and the Acceptable Use Policy (http://resumeparsing.com/AcceptableUse.htm).
+ * 
+ * The goal of this application is to maximize accuracy and throughput while complying with the requirements linked above.
+ * Please read all block comments carefully to understand the process!!
+ ****************************************************************************************************************************/
 
 import { IConnection } from './connection-interface';
 import { RestService } from "../services/rest.service";
@@ -89,14 +96,28 @@ function setupCommonFields(settings: ParseSettings, filePath: string): BaseReque
         request.OutputPdf = settings.outputPdf;
     if (settings.outputRtf)
         request.OutputRtf = settings.outputRtf;
+
+    /****************************************************************************************************************************
+     * The Revision Date tells our software the last time the resume was updated. 
+     * THIS IS EXTREMELY IMPORTANT WHEN PARSING OLDER RESUMES SO THAT WE DON'T OVERVALUE THEIR EXPERIENCE. 
+     * Any "Current" or "Today" date will be assigned the Revision Date. 
+     * If a resume is 3 years old, that means all Jobs and Skills will have 3 extra years of (false) work found if the Revision Date is not set.
+     * 
+     * We strongly recommend using the files Last Modified date as the Revision Date like done here.
+     ****************************************************************************************************************************/
     let stats = fs.statSync(filePath);
     request.RevisionDate = moment(stats.mtime).format("YYYY-MM-DD");
+
     if (settings.skills)
         request.SkillsData = settings.skills;
     if (settings.normalizations)
         request.NormalizerData = settings.normalizations;
         
-    // per the TOS do not index documents during bulk parsing
+    /****************************************************************************************************************************
+     * Per the Acceptable Use Policy (https://docs.sovren.com/Policies/AcceptableUse) do not index documents during bulk parsing.
+     * 
+     * This means DO NOT include anything in the request.IndexingOptions property
+     ****************************************************************************************************************************/
 
     return request;
 }
@@ -144,8 +165,8 @@ function handleParseResponse(response: ParseResponse, settings: ParseSettings, f
 }
 
 
-
-function ensureDirectoryExistence(filePath) { //creates directory if it doesn't exist already
+// This function creates a directory if it doesn't already exist
+function ensureDirectoryExistence(filePath) {
     var dirname = path.dirname(filePath);
     if (fs.existsSync(dirname)) {
       return true;

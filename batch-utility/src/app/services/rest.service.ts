@@ -1,3 +1,11 @@
+/****************************************************************************************************************************
+ * This is a sample application designed by Sovren to comply with the Terms of Service (http://resumeparsing.com/TOS.htm)
+ * and the Acceptable Use Policy (http://resumeparsing.com/AcceptableUse.htm).
+ * 
+ * The goal of this application is to maximize accuracy and throughput while complying with the requirements linked above.
+ * Please read all block comments carefully to understand the process!!
+ ****************************************************************************************************************************/
+
 import { OutputFormat, DocumentType } from './../models/parse-settings';
 import { Injectable, Output } from '@angular/core';
 import { HttpHeaders, HttpClient } from '@angular/common/http';
@@ -31,7 +39,11 @@ export class RestService {
             let accountResponse = await this.http.get<GetAccountResponse>(url).first().toPromise();
             return accountResponse;
         }
-        catch(e) { //if they credentials failed, check the EU endpoint
+        /****************************************************************************************************************************
+         * The Sovren SaaS system is in two data centers. We check the US one first.
+         * If the credentials are invalid, we check the EU endpoint.
+         ****************************************************************************************************************************/
+        catch(e) { 
             url = url.replace('rest.resumeparsing','eu-rest.resumeparsing');
             let accountResponse = await this.http.get<GetAccountResponse>(url).first().toPromise();
             accountUser.euRegion = true; //if that worked they are in eu
@@ -85,14 +97,19 @@ export class RestService {
         if (request.OutputFormat == OutputFormat.JSON) {
             return await this.http.post<ParseResponse>(url, request).first().toPromise(); 
         }
-        else { //if xml if we have parse the result back to json
+        else {
+            /****************************************************************************************************************************
+             * If we wish to return the parsed document in XML format we need to do a couple extra steps
+             * Because angular won't allow us to accept an XML response cleanly, we get it back as text,
+             * then convert it to XML, and then parse the result into our model
+             ****************************************************************************************************************************/
             let headers = new HttpHeaders({ 'Accept': request.OutputFormat });
             let options = { headers: headers, responseType: 'text' as 'text' };
             let response = await this.http.post(url, request, options).first().toPromise(); 
             let xml = this.parseXML(response); 
             let jsonResponse = JsonXmlHelper.XmlToJson(xml);
             let result = JSON.parse(JSON.stringify(jsonResponse.ResponseModelOfParsedResumeResponseModel)) as ParseResponse;
-            result.Value.ParsedDocument = xml.getElementsByTagName('ParsedDocument')[0].textContent;  //make sure we get the right parseddocument. this is most important
+            result.Value.ParsedDocument = xml.getElementsByTagName('ParsedDocument')[0].textContent;
             return result;
         }
     }
@@ -103,14 +120,19 @@ export class RestService {
         if (request.OutputFormat == OutputFormat.JSON) {
             return await this.http.post<ParseResponse>(url, request).first().toPromise(); 
         }
-        else { //if xml if we have parse the result back to json
+        else {
+            /****************************************************************************************************************************
+             * If we wish to return the parsed document in XML format we need to do a couple extra steps
+             * Because angular won't allow us to accept an XML response cleanly, we get it back as text,
+             * then convert it to XML, and then parse the result into our model
+             ****************************************************************************************************************************/
             let headers = new HttpHeaders({ 'Accept': request.OutputFormat });
             let options = { headers: headers, responseType: 'text' as 'text' };
             let response = await this.http.post(url, request, options).first().toPromise(); 
             let xml = this.parseXML(response); 
             let jsonResponse = JsonXmlHelper.XmlToJson(xml);
             let result = JSON.parse(JSON.stringify(jsonResponse.ResponseModelOfParsedJobOrderResponseModel)) as ParseResponse;
-            result.Value.ParsedDocument = xml.getElementsByTagName('ParsedDocument')[0].textContent; //make sure we get the right parseddocument. this is most important
+            result.Value.ParsedDocument = xml.getElementsByTagName('ParsedDocument')[0].textContent;
             return result;
         }
     }
@@ -131,7 +153,7 @@ export class RestService {
         if (accountUser.euRegion)
             return `https://eu-rest.resumeparsing.com/v8/${fullPath}`;
 
-        return `http://rest.resumeparsing.com/v8/${fullPath}`;
+        return `http://localhost:55925/${fullPath}`;
     }
 
 }
