@@ -2,22 +2,14 @@
     text-decoration: underline;
 }
 
-clr-signpost-content {
-    width:360px;
-}
-
-input:not(.no-margin), div.select, label.api-message {
-    margin-top: 12px !important;
-}
-
-clr-checkbox, .radio-inline {
-    margin-top: 16px !important;
-}
-
 .block {
     display: block;
 }
 
 .modal-dialog .modal-content {
     background-color:#292929 !important;
+}
+
+.form-group:not(.no-margin) {
+    padding-left:0rem !important;
 }

@@ -1,5 +1,11 @@
+/****************************************************************************************************************************
+ * This is a sample application designed by Sovren to comply with the Terms of Service (http://resumeparsing.com/TOS.htm)
+ * and the Acceptable Use Policy (http://resumeparsing.com/AcceptableUse.htm).
+ * 
+ * The goal of this application is to maximize accuracy and throughput while staying within the requirements linked above.
+ * Please read all comment blocks carefully to understand the process!!
+ ****************************************************************************************************************************/
 
-// import { authProviders } from './app.routing';
 import { Injectable } from '@angular/core';
 import {
     HttpRequest,
@@ -27,7 +33,12 @@ export class AuthInterceptor implements HttpInterceptor {
     getAuthHeaders(headers: HttpHeaders) {
         let account = this.storage.getLocalLoginInfo();
         
-        //append Sovren-AccountId and Sovren-ServiceKey to EVERY request
+        /****************************************************************************************************************************
+         * Our REST API handles authentication via the Sovren-AccountId and Sovren-ServiceKey headers. 
+         * These keys were generated during account creation and send to the contacts listed on the account. 
+         * If authentication fails we return a 401 Unathorized HTTP Status Code.
+         ****************************************************************************************************************************/
+
         return headers
         .append('Sovren-AccountId', account.accountId)
         .append('Sovren-ServiceKey', account.serviceKey);

@@ -2,8 +2,8 @@
  * This is a sample application designed by Sovren to comply with the Terms of Service (http://resumeparsing.com/TOS.htm)
  * and the Acceptable Use Policy (http://resumeparsing.com/AcceptableUse.htm).
  * 
- * The goal of this application is to maximize accuracy and throughput while complying with the requirements linked above.
- * Please read all block comments carefully to understand the process!!
+ * The goal of this application is to maximize accuracy and throughput while staying within the requirements linked above.
+ * Please read all comment blocks carefully to understand the process!!
  ****************************************************************************************************************************/
 
 import { OutputFormat, DocumentType } from './../models/parse-settings';
@@ -99,6 +99,12 @@ export class RestService {
         }
         else {
             /****************************************************************************************************************************
+             * Our REST API accepts and returns content in JSON or XML. 
+             * The Content-Type header is required, and indicates your request's content type. 
+             * Our API supports JSON (application/json) and XML (application/xml). 
+             * The Accept header controls what data format the response will be returned in. 
+             * Our API defaults to JSON (application/json) but also supports XML (application/xml).
+             * 
              * If we wish to return the parsed document in XML format we need to do a couple extra steps
              * Because angular won't allow us to accept an XML response cleanly, we get it back as text,
              * then convert it to XML, and then parse the result into our model
@@ -122,6 +128,12 @@ export class RestService {
         }
         else {
             /****************************************************************************************************************************
+             * Our REST API accepts and returns content in JSON or XML. 
+             * The Content-Type header is required, and indicates your request's content type. 
+             * Our API supports JSON (application/json) and XML (application/xml). 
+             * The Accept header controls what data format the response will be returned in. 
+             * Our API defaults to JSON (application/json) but also supports XML (application/xml).
+             * 
              * If we wish to return the parsed document in XML format we need to do a couple extra steps
              * Because angular won't allow us to accept an XML response cleanly, we get it back as text,
              * then convert it to XML, and then parse the result into our model
@@ -153,7 +165,7 @@ export class RestService {
         if (accountUser.euRegion)
             return `https://eu-rest.resumeparsing.com/v8/${fullPath}`;
 
-        return `http://localhost:55925/${fullPath}`;
+        return `https://rest.resumeparsing.com/v8/${fullPath}`;
     }
 
 }

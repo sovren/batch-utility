@@ -2,8 +2,8 @@
  * This is a sample application designed by Sovren to comply with the Terms of Service (http://resumeparsing.com/TOS.htm)
  * and the Acceptable Use Policy (http://resumeparsing.com/AcceptableUse.htm).
  * 
- * The goal of this application is to maximize accuracy and throughput while complying with the requirements linked above.
- * Please read all block comments carefully to understand the process!!
+ * The goal of this application is to maximize accuracy and throughput while staying within the requirements linked above.
+ * Please read all comment blocks carefully to understand the process!!
  ****************************************************************************************************************************/
 
 import { RestService } from "../services/rest.service";

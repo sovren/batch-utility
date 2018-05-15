@@ -2,16 +2,14 @@
  * This is a sample application designed by Sovren to comply with the Terms of Service (http://resumeparsing.com/TOS.htm)
  * and the Acceptable Use Policy (http://resumeparsing.com/AcceptableUse.htm).
  * 
- * The goal of this application is to maximize accuracy and throughput while complying with the requirements linked above.
- * Please read all block comments carefully to understand the process!!
+ * The goal of this application is to maximize accuracy and throughput while staying within the requirements linked above.
+ * Please read all comment blocks carefully to understand the process!!
  ****************************************************************************************************************************/
-
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, Input, NgZone, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ElectronService } from 'ngx-electron';
-import { KeyValuePair } from '../models/key-value-pair';
 import { DocumentType, GeoCodeProvider, ParseSettings } from '../models/parse-settings';
 import { Account } from '../models/responses/get-account';
 import { Index } from '../models/responses/get-indexes';
@@ -21,7 +19,7 @@ import { FileSystem } from '../utilities/filesystem';
 import { AppLogger } from '../utilities/logger';
 import { StorageHelper } from '../utilities/storage';
 import { AccountUser } from './../models/account-user';
-import { OutputFormat } from './../models/parse-settings';
+import { KnownType, OutputFormat } from './../models/parse-settings';
 import { ParseSummaryResults } from './../models/parse-summary-results';
 import { IndexRequest } from './../models/requests/multiple-index';
 import { IndexMultipleResponse } from './../models/responses/multiple-index';
@@ -44,11 +42,12 @@ export class ParseComponent implements OnInit {
   @Input() documentType: DocumentType;
 
   /****************************************************************************************************************************
-   * We declare all our component scoped variables here. Descriptions of each variable and it's use are in comments below 
+   * We declare all our component scoped variables here. Descriptions of each variable and its use are in comments below 
    ****************************************************************************************************************************/
   loggedInAccount: AccountUser; //accountId and service key. used to filter indexes
   account: Account = new Account(); //contains MaximumConcurrentRequests and CreditsRemaining
   settings: ParseSettings = new ParseSettings(); //settings to be sent to api with each parse request
+  configuring: boolean = false;
   loading: boolean = false; //a value of true will show a loading icon when counting files in the source directory
   parsing: boolean = false; //a value of true will make the parsing progress bar visible
   submitted: boolean = false; //a value of true will show the summary page
@@ -64,9 +63,10 @@ export class ParseComponent implements OnInit {
 
   //dropdowns
   geoCodeProviders = GeoCodeProvider; //enum that handles values in geocoding dropdown
+  knownTypes = KnownType; //enum that handles values in known types dropdown
   outputFormats = OutputFormat; //enum that handles values for output checkboxes
-  normalizations: KeyValuePair[] = new Array<KeyValuePair>(); //holds lists of all users normalization lists
-  skills: KeyValuePair[] = new Array<KeyValuePair>(); //holds lists of all users skills lists
+  normalizations: string[] = new Array<string>(); //holds lists of all users normalization lists
+  skills: string[] = new Array<string>(); //holds lists of all users skills lists
   indexes: Index[] = new Array<Index>(); //holds lists of all users indexes
 
   //parsing summary page and results
@@ -84,10 +84,25 @@ export class ParseComponent implements OnInit {
     private restSvc: RestService, public electronSvc: ElectronService, private zone: NgZone) { }
 
   async ngOnInit() {
+    this.configuring = true;
     this.loggedInAccount = this.storageSvc.getLocalLoginInfo();
 
-    this.skills = (await this.restSvc.getSkills()).Value; //gets available skill lists
-    this.normalizations = (await this.restSvc.getNormalizations()).Value; //gets available normalizations lists
+    /****************************************************************************************************************************
+     * The /skills endpoint returns us a list of all skills.
+     * Because the parser automatically detects language and looks for a corresponding skills list in that language,
+     * we only show the unique name values
+     ****************************************************************************************************************************/
+    this.skills = (await this.restSvc.getSkills()).Value.map(skill => skill.Name);
+    this.skills = this.skills.filter((value, index, self) => { return self.indexOf(value) === index });
+
+
+      /****************************************************************************************************************************
+     * The /skills endpoint returns us a list of all skills.
+     * Because the parser automatically detects language and looks for a corresponding skills list in that language,
+     * we only show the unique name values
+     ****************************************************************************************************************************/
+    this.normalizations = (await this.restSvc.getNormalizations()).Value.map(normalization => normalization.Name);
+    this.normalizations = this.normalizations.filter((value, index, self) => { return self.indexOf(value) === index });
 
     /****************************************************************************************************************************
      * We can check if AIM is enabled by calling the /index endpoint
@@ -104,7 +119,8 @@ export class ParseComponent implements OnInit {
     /****************************************************************************************************************************
      * We call the /Account endpoint here to get the MaximumConcurrentRequests. 
      * This allows us to process as many documents as possible in order to maximize speed
-     * The ResourcePool is a custom class that allows us to control the number of threads active at any time
+     * 
+     * ResourcePool is a custom class that enables us to control the number of threads active at any given time
      ****************************************************************************************************************************/
     this.account = (await this.restSvc.getAccount()).Value;
     if (this.documentType == DocumentType.Resumes) {
@@ -115,13 +131,14 @@ export class ParseComponent implements OnInit {
       this.settings = this.storageSvc.getBulkJobOrderParseSettings() //settings can be saved on local machine
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, JobParserConnection);
     }
+    this.configuring = false;
   }
 
   async getIndexes() {
     let indexes = await this.restSvc.getIndexes();
     /****************************************************************************************************************************
-    * The /index endpoint returns all indexes for an account, including public indexes.
-    * We filter out the public indexes and those not for the type we are parsing 
+    * The /index endpoint will return all indexes for an account, including public indexes.
+    * We filter out the public indexes and those not for the type we are parsing so they can't be used.
     ****************************************************************************************************************************/
     this.indexes = indexes.Value
       .filter(index => index.OwnerId == this.loggedInAccount.accountId
@@ -165,7 +182,7 @@ export class ParseComponent implements OnInit {
     this.saveSettings();
 
     /****************************************************************************************************************************
-     * This methods will iterate through all files in the directory and each of it's subdirectories
+     * This method will iterate through all files in the directory and each of it's subdirectories
      * We store the result in the filesToParse array to be used later
      ****************************************************************************************************************************/
     this.fileSystem.getFilesInDirectory(this.settings.inputDirectory).then((fileList) => {
@@ -177,7 +194,7 @@ export class ParseComponent implements OnInit {
 
     /****************************************************************************************************************************
      * Job order parsing always costs 2 credits. 
-     * Resume parsing costs 1 credit for non AIM accounts, otherwise it costs 2 credits.
+     * Resume parsing costs 1 credit for non-AIM accounts, otherwise it costs 2 credits.
      * 
      * Note: Changing this here won't affect the cost of the parsing transactions. It is for display purposes only
      ****************************************************************************************************************************/
@@ -242,7 +259,8 @@ export class ParseComponent implements OnInit {
      * an additional Batch Transaction, whether from the same process or any other batch process submitting with your credentials, 
      * may be submitted only when, and as, the Service has returned the results of its processing of one of the submitted transactions.
      * 
-     * The getConnection() method will wait until a thread is available before continuing with the parsing.
+     * We handle this using the getConnection() method on our ResourcePool. 
+     * It will wait until a thread is available before continuing with any parsing.
      * 
      * We have also implemented a cancellation token here to allow the user to stop parsing early if desired.
      ****************************************************************************************************************************/
@@ -259,9 +277,9 @@ export class ParseComponent implements OnInit {
         this.summaryResults.percentComplete = Math.floor((this.summaryResults.numParsed * 100) / this.totalFiles); //round down so the progress bar doesn't finish early
 
         /****************************************************************************************************************************
-         * We MUST query for MaximumConcurrentRequests every 1,000 requests per the Acceptable Use Policy.
+         * We MUST query for MaximumConcurrentRequests every 1,000 requests per the Acceptable Use Policy (https://docs.sovren.com/Policies/AcceptableUse).
          * 
-         * Note: Calling GetAccountInfo this often is ONLY acceptable in conjunction with Batch Transactions like in this app.
+         * Note: Calling GetAccountInfo this often is ONLY acceptable in conjunction with Batch Transactions like in this application.
          ****************************************************************************************************************************/
         if (this.summaryResults.numParsed % 1000 == 0) {
           this.account = (await this.restSvc.getAccount()).Value;
@@ -269,8 +287,8 @@ export class ParseComponent implements OnInit {
         }
 
         /****************************************************************************************************************************
-         * We can release the thread as soon as the parsing is finished. We can then continue additional processing and logging within the app.
-         * This allows us start another parsing transaction as soon as possible.
+         * We can release the thread as soon as the parsing is finished. Then we continue additional processing and logging.
+         * This allows us start another parsing transaction as soon as possible to maximize speed.
          ****************************************************************************************************************************/
         this.pool.release(conn);
         this.appLogger.log(`${documentFileName} parsed successfully`);
@@ -284,7 +302,7 @@ export class ParseComponent implements OnInit {
           docsToIndex.push(new IndexRequest(documentId, response.Value.ParsedDocument));
 
           /****************************************************************************************************************************
-           * We index documents in batches of 50. Bigger batches will sometimes cause the payload to be too big and return a 404
+           * We index documents in batches of 50. Bigger batches will sometimes cause the payload to be too big and return a 404 error
            ****************************************************************************************************************************/
           if (this.summaryResults.numParsedSuccessfully % 50 == 0) {
             this.indexDocuments(docsToIndex.splice(0, 50));
@@ -294,7 +312,9 @@ export class ParseComponent implements OnInit {
 
         /****************************************************************************************************************************
          * If the parsed document came back succesfully, there might still be other errors, 
-         * such as with geocoding or document conversion. We log those errors, but continue processing
+         * such as with geocoding or document conversion. We log those errors, but continue processing anyway
+         * 
+         * If you want to stop the parsing when an error occurs, you can use this.cancellationToken.cancel()
          ****************************************************************************************************************************/
         if (response.Value.GeocodeResponse && response.Value.GeocodeResponse.Code != 'Success' && response.Value.GeocodeResponse.Code != 'InsufficientData') {
           this.summaryResults.numGeocodingErrors++;
@@ -316,7 +336,9 @@ export class ParseComponent implements OnInit {
       }).catch((err: HttpErrorResponse) => {
         /****************************************************************************************************************************
          * An error here means the whole parse failed and there was a more critical error.
-         * No file will be saved to output directory.
+         * No file will be saved to the output directory.
+         * 
+         * We continue processing anyway, if you want to stop the parsing when an error occurs, you can use this.cancellationToken.cancel()
          ****************************************************************************************************************************/
         this.summaryResults.numParsed++;
         this.summaryResults.numParseErrors++;
@@ -324,14 +346,14 @@ export class ParseComponent implements OnInit {
           this.appLogger.logParseError(`${documentFileName}`, err.error.Info);
           /****************************************************************************************************************************
            * Per the Acceptable Use Policy (https://docs.sovren.com/Policies/AcceptableUse), YOU MAY NOT re-submit a document to the service if
-           * (1) A prior processed transaction of that document contained a return code from the Service indicating that the document was corrupt or of an unsupported type
-           * or (2) the document text field in the response was empty
+           * (1) A prior processed transaction of that document contained a return code from the Service indicating that the document was corrupt 
+           * or of an unsupported type or (2) the document text field in the response was empty
            * 
-           * The error messages we check for here will cover those scenarios.
+           * The error messages we check for here will cover these scenarios.
            * If one of them occurs, we move the file to a 'FAILED AND DO NOT RESUBMIT' directory in the source directory.
            * Future parses will ignore any files in this directory.
            * 
-           * If a document returns one of these errors and you believe it should not have, please reach out to Sovren Support at support@sovren.com
+           * If a document returns one of these errors and you believe it shouldn't, please reach out to Sovren Support at support@sovren.com
            ****************************************************************************************************************************/
           if (err.error.Info.Message.indexOf('Missing FileBytes parameter in your request') >= 0 ||
             err.error.Info.Message.indexOf('ovCorrupt') >= 0 ||

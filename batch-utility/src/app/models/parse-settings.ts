@@ -2,7 +2,7 @@ export class ParseSettings {
     configurationString: string;
     countryCode: string;
     language: string;
-    knownType: string;
+    knownType: KnownType;
     includeRecruitingTerms: boolean;
     includeSupplementalText: boolean;
     preferShorterJobTitles: boolean;
@@ -13,6 +13,7 @@ export class ParseSettings {
     geoCodeKey: string;
     normalizations: string;
     skills: string[];
+    includeBuiltinSkills: boolean;
     index: string;
     inputDirectory: string;
     outputDirectory: string;
@@ -24,6 +25,7 @@ export class ParseSettings {
     constructor() {
         this.geoCodeProvider = GeoCodeProvider.None;
         this.outputFormat = OutputFormat.JSON;
+        this.includeBuiltinSkills = true;
     }
 
 }
@@ -37,6 +39,11 @@ export enum GeoCodeProvider {
     None,
     Google,
     Bing
+}
+export enum KnownType {
+    Indeed,
+    Stride,
+    JOB_SUBMISSION_REPLY_TO_CANDIDATE
 }
 export enum OutputFormat {
     JSON = 'application/json',

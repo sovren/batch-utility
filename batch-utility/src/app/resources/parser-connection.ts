@@ -2,8 +2,8 @@
  * This is a sample application designed by Sovren to comply with the Terms of Service (http://resumeparsing.com/TOS.htm)
  * and the Acceptable Use Policy (http://resumeparsing.com/AcceptableUse.htm).
  * 
- * The goal of this application is to maximize accuracy and throughput while complying with the requirements linked above.
- * Please read all block comments carefully to understand the process!!
+ * The goal of this application is to maximize accuracy and throughput while staying within the requirements linked above.
+ * Please read all comment blocks carefully to understand the process!!
  ****************************************************************************************************************************/
 
 import { IConnection } from './connection-interface';
@@ -108,8 +108,16 @@ function setupCommonFields(settings: ParseSettings, filePath: string): BaseReque
     let stats = fs.statSync(filePath);
     request.RevisionDate = moment(stats.mtime).format("YYYY-MM-DD");
 
-    if (settings.skills)
+    /****************************************************************************************************************************
+     * If using a custom skills list, the builtin list is optional. You can choose to include it also by adding it to the array
+     * ex. ["builtin", "mycustomlist"]
+     ****************************************************************************************************************************/
+    if (settings.skills) {
         request.SkillsData = settings.skills;
+        if (settings.includeBuiltinSkills && request.SkillsData.indexOf('builtin') == -1)
+            request.SkillsData.push('builtin')
+    }
+
     if (settings.normalizations)
         request.NormalizerData = settings.normalizations;
         

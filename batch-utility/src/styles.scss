@@ -1,45 +1,58 @@
 /* You can add global styles to this file, and also import other style files */
 
-body, .main-container, .clr-footer {
-    background: #292929 url(assets/pattern-grid-dark.jpg) repeat left top !important;
+// p {
+//   color: #4AB9D1 !important;
+// }
+
+// a {
+//     color: #F4F4F4 !important;
+//     text-decoration: underline !important;
+// }
+
+body,
+.main-container,
+.clr-footer {
+  background: #292929 url(assets/pattern-grid-dark.jpg) repeat left top !important;
 }
 
 .main-container {
-    border: 1px solid #e6e6e6 !important;
+  border: 1px solid #e6e6e6 !important;
 }
 
-.content-container, .content-area {
-    padding-top: 0px !important;
+.content-container,
+.content-area {
+  padding-top: 0px !important;
 }
 
-.center{
-    margin-left: auto;
-    margin-right: auto;
+.center {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 select[multiple] {
-    background: #292929 !important;
+  background: #292929 !important;
 }
 
 .clr-footer {
-    margin-left: auto;
-    margin-right: auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 h1 {
-    margin: 0px !important;
+  margin: 0px !important;
 }
 
-.modal-dialog .modal-content, .signpost-flex-wrap{
-    background-color:#292929 !important;
+.modal-dialog .modal-content,
+.signpost-flex-wrap {
+  background-color: #292929 !important;
 }
 
 .popover-pointer:before {
-    border-bottom: .5rem solid #292929 !important;
-    border-left: 1px solid black !important;
-    top: 2px !important;
+  border-bottom: .5rem solid #292929 !important;
+  border-left: 1px solid black !important;
+  top: 2px !important;
 }
 
 .alert {
-    margin-bottom: 1rem !important;
+  margin-bottom: 1rem !important;
 }
