@@ -2,7 +2,6 @@
 
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { HttpModule } from '@angular/http';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NgxElectronModule } from 'ngx-electron';
@@ -45,7 +44,6 @@ import { AuthInterceptor } from './auth.interceptor';
     ClarityModule.forRoot(),
     BrowserAnimationsModule,
     AppRoutingModule,
-    HttpModule,
     HttpClientModule,
     NgxElectronModule
   ],

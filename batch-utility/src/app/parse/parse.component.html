@@ -301,81 +301,81 @@
                     Bulk Parse Summary
                 </h1>
                 <div *ngIf="settings.configurationString">
-                    <strong>Configuration String:</strong>
+                    <strong>Configuration String: </strong>
                     <label>{{settings.configurationString}}</label>
                 </div>
                 <div *ngIf="settings.countryCode">
-                    <strong>Country Code:</strong>
+                    <strong>Country Code: </strong>
                     <label>{{settings.countryCode}}</label>
                 </div>
                 <div *ngIf="settings.language">
-                    <strong>Language:</strong>
+                    <strong>Language: </strong>
                     <label>{{settings.language}}</label>
                 </div>
                 <div *ngIf="settings.knownType">
-                    <strong>Known Type:</strong>
+                    <strong>Known Type: </strong>
                     <label>{{settings.knownType}}</label>
                 </div>
                 <div *ngIf="settings.includeRecruitingTerms">
-                    <strong>Include Recruiting Terms:</strong>
+                    <strong>Include Recruiting Terms: </strong>
                     <label>{{settings.includeRecruitingTerms}}</label>
                 </div>
                 <div *ngIf="settings.includeSupplementalText">
-                    <strong>Include Supplemental Text:</strong>
+                    <strong>Include Supplemental Text: </strong>
                     <label>{{settings.includeSupplementalText}}</label>
                 </div>
                 <div *ngIf="settings.preferShorterJobTitles">
-                    <strong>Prefer Shorter Job Titles:</strong>
+                    <strong>Prefer Shorter Job Titles: </strong>
                     <label>{{settings.preferShorterJobTitles}}</label>
                 </div>
                 <div *ngIf="settings.outputHtml || settings.outputRtf || settings.outputPdf">
-                    <strong>Results Output Format:</strong>
+                    <strong>Results Output Format: </strong>
                     <label *ngIf="settings.outputHtml">Html</label>
                     <label *ngIf="settings.outputRtf">Rtf</label>
                     <label *ngIf="settings.outputPdf">Pdf</label>
                 </div>
                 <div *ngIf="settings.geoCodeProvider > 0">
-                    <strong>Geocode Provider:</strong>
+                    <strong>Geocode Provider: </strong>
                     <label>{{geoCodeProviders[settings.geoCodeProvider]}}</label>
                 </div>
                 <div *ngIf="settings.geoCodeKey && settings.geoCodeProvider > 0">
-                    <strong>Geocode Key:</strong>
+                    <strong>Geocode Key: </strong>
                     <label>{{settings.geoCodeKey}}</label>
                 </div>
                 <div *ngIf="settings.normalizations">
-                    <strong>Normalizations:</strong>
+                    <strong>Normalizations: </strong>
                     <label>{{settings.normalizations}}</label>
                 </div>
                 <div *ngIf="settings.skills">
-                    <strong>Skills:</strong>
+                    <strong>Skills: </strong>
                     <label>{{settings.skills}}</label>
                 </div>
                 <div *ngIf="settings.index">
-                    <strong>Index:</strong>
+                    <strong>Index: </strong>
                     <label>{{settings.index}}</label>
                 </div>
                 <div>
-                    <strong>Source Path:</strong>
+                    <strong>Source Path: </strong>
                     <label>{{settings.inputDirectory}}</label>
                 </div>
                 <div>
-                    <strong>Output Path:</strong>
+                    <strong>Output Path: </strong>
                     <label>{{settings.outputDirectory}}</label>
                 </div>
                 <br />
                 <br/>
                 <br />
                 <div>
-                    <strong>Total Files to Parse:</strong>
+                    <strong>Total Files to Parse: </strong>
                     <label>{{totalFiles.toLocaleString()}}</label>
                 </div>
                 <div>
-                    <strong>Estimated Cost:</strong>
+                    <strong>Estimated Cost: </strong>
                     <label>{{(totalFiles * costPerParse).toLocaleString()}} credits</label>
                 </div>
                 <br />
                 <div>
-                    <strong>Current Credits</strong>
+                    <strong>Current Credits: </strong>
                     <label>{{account.CreditsRemaining.toLocaleString()}}</label>
                 </div>
                 <br />
