@@ -24,6 +24,7 @@ import { ParseComponent } from './parse/parse.component';
 import { AppRoutingModule } from './app.routing';
 import { RestService } from './services/rest.service';
 import { AuthInterceptor } from './auth.interceptor';
+import { DirectorySelectionComponent } from './directory-selection/directory-selection.component';
 
 
 
@@ -34,6 +35,7 @@ import { AuthInterceptor } from './auth.interceptor';
     MinutesSecondsPipe,
     SignInComponent,
     HomeComponent,
+    DirectorySelectionComponent,
     ResumesShellComponent,
     JobOrdersShellComponent,
     ParseComponent

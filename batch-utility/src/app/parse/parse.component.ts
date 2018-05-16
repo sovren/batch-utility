@@ -47,14 +47,20 @@ export class ParseComponent implements OnInit {
   loggedInAccount: AccountUser; //accountId and service key. used to filter indexes
   account: Account = new Account(); //contains MaximumConcurrentRequests and CreditsRemaining
   settings: ParseSettings = new ParseSettings(); //settings to be sent to api with each parse request
-  configuring: boolean = false;
-  loading: boolean = false; //a value of true will show a loading icon when counting files in the source directory
-  parsing: boolean = false; //a value of true will make the parsing progress bar visible
-  submitted: boolean = false; //a value of true will show the summary page
+
+
   aimEnabled: boolean = false;  //this is true if your account has AIM enabled. Used to calculate credits and show indexes dropdown
   errorMessage: string; //used to hold any error message to be displayed on the screen
 
   appLogger: AppLogger; //handles logging and directory setup
+
+
+  //display variables
+  configuring: boolean = false;
+  loading: boolean = false; //a value of true will show a loading icon when counting files in the source directory
+  parsing: boolean = false; //a value of true will make the parsing progress bar visible
+  submitted: boolean = false; //a value of true will show the summary page
+  currentStep: number = 1;
 
   //index variables
   showIndexModal: boolean = false; //a value of true will show the modal to create new index
@@ -96,11 +102,11 @@ export class ParseComponent implements OnInit {
     this.skills = this.skills.filter((value, index, self) => { return self.indexOf(value) === index });
 
 
-      /****************************************************************************************************************************
-     * The /skills endpoint returns us a list of all skills.
-     * Because the parser automatically detects language and looks for a corresponding skills list in that language,
-     * we only show the unique name values
-     ****************************************************************************************************************************/
+    /****************************************************************************************************************************
+   * The /skills endpoint returns us a list of all skills.
+   * Because the parser automatically detects language and looks for a corresponding skills list in that language,
+   * we only show the unique name values
+   ****************************************************************************************************************************/
     this.normalizations = (await this.restSvc.getNormalizations()).Value.map(normalization => normalization.Name);
     this.normalizations = this.normalizations.filter((value, index, self) => { return self.indexOf(value) === index });
 
@@ -131,6 +137,19 @@ export class ParseComponent implements OnInit {
       this.settings = this.storageSvc.getBulkJobOrderParseSettings() //settings can be saved on local machine
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, JobParserConnection);
     }
+
+    /****************************************************************************************************************************
+     * Job order parsing always costs 2 credits. 
+     * Resume parsing costs 1 credit for non-AIM accounts, otherwise it costs 2 credits.
+     * 
+     * Note: Changing this here won't affect the cost of the parsing transactions. It is for display purposes only
+     ****************************************************************************************************************************/
+    if (this.documentType == DocumentType.Resumes && !this.aimEnabled)
+      this.costPerParse = 1;
+    else
+      this.costPerParse = 2;
+
+
     this.configuring = false;
   }
 
@@ -159,8 +178,7 @@ export class ParseComponent implements OnInit {
     return false;
   }
 
-
-  async onSettingsSubmit() {
+  async onDirectoriesSelected() {
     if (this.loading)
       return;
 
@@ -179,7 +197,7 @@ export class ParseComponent implements OnInit {
     this.loading = true;
     this.filesToParse = new Array<any>();
 
-    this.saveSettings();
+
 
     /****************************************************************************************************************************
      * This method will iterate through all files in the directory and each of it's subdirectories
@@ -188,21 +206,21 @@ export class ParseComponent implements OnInit {
     this.fileSystem.getFilesInDirectory(this.settings.inputDirectory).then((fileList) => {
       this.filesToParse = fileList;
       this.loading = false;
-      this.submitted = true;
+
       this.totalFiles = fileList.length;
+      if ((this.totalFiles * this.costPerParse) > this.account.CreditsRemaining){
+        this.errorMessage = `Sorry, your account does not have enough credits to parse ${this.totalFiles.toLocaleString()} documents`;
+      }
+      else
+        this.currentStep = 2;
     });
 
-    /****************************************************************************************************************************
-     * Job order parsing always costs 2 credits. 
-     * Resume parsing costs 1 credit for non-AIM accounts, otherwise it costs 2 credits.
-     * 
-     * Note: Changing this here won't affect the cost of the parsing transactions. It is for display purposes only
-     ****************************************************************************************************************************/
-    if (this.documentType == DocumentType.Resumes && !this.aimEnabled)
-      this.costPerParse = 1;
-    else
-      this.costPerParse = 2;
+  }
 
+  async onSettingsSubmit() {
+
+    this.saveSettings();
+    this.submitted = true;
     /****************************************************************************************************************************
      * Using geocoding without providing your own key costs an extra .5 credits per parse
      ****************************************************************************************************************************/
@@ -252,7 +270,7 @@ export class ParseComponent implements OnInit {
     const results = [];
 
     /****************************************************************************************************************************
-     * The number of threads (connections) is based on your account's MaximumConcurrentRequests.
+     * The number of threads is based on your account's MaximumConcurrentRequests.
      * 
      * Per the Acceptable Use Policy (https://docs.sovren.com/Policies/AcceptableUse), once you have submitted 
      * the Maximum Allowable Number of Concurrent Batch Transactions to the Service ("the current transactions"), 
@@ -384,7 +402,7 @@ export class ParseComponent implements OnInit {
       results.push(result);
     }
 
-    //we wait for the last few connections to finish
+    //wait for the last few connections to finish
     await Promise.all(results);
 
     //index remaining documents

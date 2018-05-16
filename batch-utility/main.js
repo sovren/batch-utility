@@ -22,8 +22,8 @@ function createWindow () {
     icon: path.join(__dirname, 'icons/png/64x64.png')
   })
 
-  //win.loadURL('http://localhost:4200');
-  win.loadURL(`file://${__dirname}/dist/index.html`)
+  win.loadURL('http://localhost:4200');
+  //win.loadURL(`file://${__dirname}/dist/index.html`)
 
   win.on('resize', () => {
     let { width, height } = win.getBounds();
@@ -35,8 +35,8 @@ function createWindow () {
   })
 }
 
-app.on('ready', createWindow)
-//app.on('ready', ()=>{setTimeout(createWindow, 10000)})
+//app.on('ready', createWindow)
+app.on('ready', ()=>{setTimeout(createWindow, 10000)})
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') {

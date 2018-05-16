@@ -2,215 +2,269 @@
   <div class="col-lg-12">
     <div>
       <form #settingsForm="ngForm" class="compact" (ngSubmit)="onSettingsSubmit()" [hidden]="submitted">
-        <h1 *ngIf="documentType == 0" class="center">
+        <!-- <h1 *ngIf="documentType == 0" class="center">
           Bulk Parse Resume Settings
-        </h1>
-        <h1 *ngIf="documentType == 1" class="center">
+        </h1> -->
+        <!-- <h1 *ngIf="documentType == 1" class="center">
           Bulk Parse Job Settings
-        </h1>
+        </h1> -->
 
 
         <section *ngIf="!configuring" class="form-block">
-          <p *ngIf="documentType == 0">The Parser is highly configurable to meet your needs, but by default, is configured to parse in a way that meets
-            most users' needs. If you want to use a different configuration, you can enter it here. If this is not specified, the default
-            parser configuration will be used. For more information regarding the parser configuration string and assistance
-            generating one, refer to the
-            <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#configuration-basics-overview')">Parser Configuration Documentation</a>.
-          </p>
-          <div *ngIf="documentType == 0" class="form-group">
-            <input type="text" id="configurationString" placeholder="Optional" name="configurationString" [(ngModel)]="settings.configurationString"
-              size="100">
+
+          <div name="STEP1_DIRECTORYSELECTION" [hidden]="currentStep != 1">
+            <h2>
+              <span *ngIf="aimEnabled">As an AI Matching customer, each</span>
+              <span *ngIf="!aimEnabled">Each</span> document parsed will cost <span style="color:#F26522">{{costPerParse}} credits</span>. You currently have <span style="color:#F26522">{{account.CreditsRemaining.toLocaleString()}}
+              credits</span> available.
+            </h2>
+            <br/>
+            <br/>
+
+            <h2 class="center">
+              First, we want to let you know how many total credits this batch transaction will cost. Please select the directory that
+              contains the
+              <span *ngIf="documentType == 0">resumes</span>
+              <span *ngIf="documentType == 1">jobs</span> to be parsed. Any file contained in a subdirectory will also be parsed. We will not alter the folder
+              structure.
+            </h2>
+            <br />
+            <!-- <strong *ngIf="!settings.inputDirectory" style="color:red">* </strong>Select a local directory containing the source documents to be parsed</p> -->
+            <div class="form-group">
+              <input id="sourcePath" type="text" name="sourcePath" [(ngModel)]="settings.inputDirectory" placeholder="Enter source path"
+                required size="100" />
+              <button class="btn btn-outline btn-sm" (click)="browseDirectory(setSource)">Browse...</button>
+            </div>
+            <br/>
+            <br/>
+
+
+            <button type="button" class="btn btn-primary" [routerLink]="['../Home']">Back</button>
+            <button type="button" (click)="onDirectoriesSelected()" [clrLoading]="loading" class="btn btn-primary" [disabled]="settingsForm.form.invalid">Next</button>
+            <span *ngIf="loading">Calculating... This could take a while...</span>
+
+            <div *ngIf="errorMessage != null" class="alert alert-danger">
+              <div class="alert-items">
+                <div class="alert-item static">
+                  <div class="alert-icon-wrapper">
+                    <clr-icon class="alert-icon" shape="exclamation-circle"></clr-icon>
+                  </div>
+                  <span class="alert-text">{{errorMessage}}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div *ngIf="documentType == 1">
-            <p>Optionally enter a
-              <a href="javascript:void(0)" (click)="openExternal('https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements')">2-letter ISO 3166 code</a> (or comma-delimited list of such codes) indicating the country to be assumed in
-              cases where the location cannot be automatically detected. If multiple codes are specified, the first one is
-              given the highest priority. </p>
-            <div class="form-group">
-              <input type="text" id="countryCode" placeholder="Optional" name="countryCode" [(ngModel)]="settings.countryCode" size="100">
+          <div name="STEP2_INDEX" [hidden]="currentStep !=2">
+            <h2>
+              Thank you! The estimated cost of this batch transaction is <span style="color:#F26522">{{(this.totalFiles * this.costPerParse).toLocaleString()}}</span> credits.
+            </h2>
+            <br />
+            <br />
+            <div class="form-group" *ngIf="aimEnabled">
+              <h2>
+                You will likely want to index these documents in order to be able to search and match against them later. This is the best
+                way to able to take full advantage of our powerful algorithms. Indexes are collections of documents (either
+                jobs or resumes) and can be used as logical separations for your documents. If you've already created an
+                index, you can select it here or you can create a new one by using the button below.
+              </h2>
+              <div *ngIf="indexes.length > 0" class="select">
+                <select id="index" name="index" [(ngModel)]="settings.index">
+                  <option [value]=""></option>
+                  <option *ngFor="let item of indexes" [value]="item.Name">{{item.Name}}</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" (click)="showIndexModal = true">Create new Index</button>
             </div>
+            <button type="button" class="btn btn-primary" (click)="currentStep = 1">Back</button>
+            <button type="button" (click)="currentStep = 3" [clrLoading]="loading" class="btn btn-primary" [disabled]="settingsForm.form.invalid">Next</button>
+          </div>
 
-            <p>Optionally enter an
-              <a href="javascript:void(0)" (click)="openExternal('https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes')">ISO 639-1 two letter language code</a> indicating the language to be assumed in cases where the language cannot
-              be automatically detected.</p>
-            <div class="form-group">
-              <input type="text" id="language" placeholder="Optional" name="language" [(ngModel)]="settings.language" size="100">
-            </div>
 
-            <p>Optionally specify a known type to enable special processing.</p>
+          <div name="STEP3_GEOCODING" [hidden]="currentStep != 3">
+            <p>If you want to perform radius searching, select a provider to use to geocode the postal address.
+            </p>
             <div class="form-group">
               <div class="select">
-                <select id="knownType" name="knownType" [(ngModel)]="settings.knownType">
-                  <option *ngFor="let item of knownTypes | keys" [value]="item.value">{{item.value}}</option>
+                <select id="geoCodeProvider" name="geoCodeProvider" [(ngModel)]="settings.geoCodeProvider">
+                  <option *ngFor="let item of geoCodeProviders | keys" [value]="item.key">{{item.value}}</option>
                 </select>
               </div>
             </div>
 
-            <p>Recruiting terms in skills and job titles are ignored by default because these terms often appear in job orders
-              that are unrelated to recruiting. If this job order is for a recruiting or human resources position, then select
-              this.
+            <p *ngIf="settings.geoCodeProvider > 0">Optionally enter a provider key. If you do not supply one, geocoding will cost .5 extra credits per document.
+              If using Bing you must specify your own provider key.</p>
+            <div *ngIf="settings.geoCodeProvider > 0" class="form-group">
+              <input type="text" id="geoCodeKey" [placeholder]="settings.geoCodeProvider != 2 ? 'Optional' : 'Required'" name="geoCodeKey"
+                [(ngModel)]="settings.geoCodeKey" #geoCodeKeyInput="ngModel" [required]="settings.geoCodeProvider == 2" size="100">
+            </div>
+
+            <button type="button" class="btn btn-primary" (click)="currentStep = 2">Back</button>
+            <button type="button" (click)="currentStep = 4" [clrLoading]="loading" class="btn btn-primary" [disabled]="settingsForm.form.invalid">Next</button>
+          </div>
+
+
+          <div [hidden]="currentStep != 4">
+            <p>
+              <strong *ngIf="!settings.outputDirectory" style="color:red">* </strong>Select a local directory to save the parsed documents to. Logs will also be saved here.</p>
+            <div class="form-group">
+              <input id="outputPath" type="text" name="outputPath" [(ngModel)]="settings.outputDirectory" placeholder="Enter output path"
+                required size="100" />
+              <button class="btn btn-outline btn-sm" (click)="browseDirectory(setOutput)">Browse...</button>
+            </div>
+
+            <p *ngIf="documentType == 0">The Parser is highly configurable to meet your needs, but by default, is configured to parse in a way that meets
+              most users' needs. If you want to use a different configuration, you can enter it here. If this is not specified,
+              the default parser configuration will be used. For more information regarding the parser configuration string
+              and assistance generating one, refer to the
+              <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#configuration-basics-overview')">Parser Configuration Documentation</a>.
             </p>
-            <div class="form-group">
-              <clr-checkbox [clrInline]="true" name="includeRecruitingTerms" [(ngModel)]="settings.includeRecruitingTerms"></clr-checkbox>
-            </div>
-            <p>The parser defaults to extracting data from only the text that precedes the place in job orders where they transition
-              from describing the job itself to describing the company, hiring policies, background checks, benefits, etc.
-              This division of text normally works well, but in some job orders it can occur in the wrong place. Select this
-              to allow the parser to extract data from all of the text.</p>
-            <div class="form-group">
-              <clr-checkbox [clrInline]="true" name="includeSupplementalText" [(ngModel)]="settings.includeSupplementalText"></clr-checkbox>
+            <div *ngIf="documentType == 0" class="form-group">
+              <input type="text" id="configurationString" placeholder="Optional" name="configurationString" [(ngModel)]="settings.configurationString"
+                size="100">
             </div>
 
-            <p>The parser defaults to returning full job titles. Select this to shorten job titles by excluding trailing phrases
-              that do not include job words, so that "Vice President" would be returned instead of "Vice President, Information
-              Systems".
-            </p>
-            <div class="form-group">
-              <clr-checkbox [clrInline]="true" name="preferShorterJobTitles" [(ngModel)]="settings.preferShorterJobTitles"></clr-checkbox>
-            </div>
-          </div>
+            <div *ngIf="documentType == 1">
+              <p>Optionally enter a
+                <a href="javascript:void(0)" (click)="openExternal('https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements')">2-letter ISO 3166 code</a> (or comma-delimited list of such codes) indicating the country to be assumed in
+                cases where the location cannot be automatically detected. If multiple codes are specified, the first one
+                is given the highest priority. </p>
+              <div class="form-group">
+                <input type="text" id="countryCode" placeholder="Optional" name="countryCode" [(ngModel)]="settings.countryCode" size="100">
+              </div>
 
-          <p>Select the format to save the parsed results as.</p>
-          <div class="form-group">
-            <div class="radio-inline">
-              <input type="radio" [(ngModel)]="settings.outputFormat" [value]="outputFormats.JSON" name="json" id="json">
-              <label for="json">JSON</label>
-            </div>
-            <div class="radio-inline">
-              <input type="radio" [(ngModel)]="settings.outputFormat" [value]="outputFormats.XML" name="xml" id="xml" checked>
-              <label for="xml">XML</label>
-            </div>
-          </div>
+              <p>Optionally enter an
+                <a href="javascript:void(0)" (click)="openExternal('https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes')">ISO 639-1 two letter language code</a> indicating the language to be assumed in cases where the language
+                cannot be automatically detected.</p>
+              <div class="form-group">
+                <input type="text" id="language" placeholder="Optional" name="language" [(ngModel)]="settings.language" size="100">
+              </div>
 
-          <p>Optionally select any of the below additional formats to convert the original file to.</p>
-          <div class="form-group">
-            <clr-checkbox [clrInline]="true" name="html" [(ngModel)]="settings.outputHtml">
-              HTML
-            </clr-checkbox>
-            <clr-checkbox [clrInline]="true" name="rtf" [(ngModel)]="settings.outputRtf">
-              RTF
-            </clr-checkbox>
-            <clr-checkbox [clrInline]="true" name="pdf" [(ngModel)]="settings.outputPdf">
-              PDF
-            </clr-checkbox>
-          </div>
-
-          <p>If you want to perform radius searching, select a provider to use to geocode the postal address.
-          </p>
-          <div class="form-group">
-            <div class="select">
-              <select id="geoCodeProvider" name="geoCodeProvider" [(ngModel)]="settings.geoCodeProvider">
-                <option *ngFor="let item of geoCodeProviders | keys" [value]="item.key">{{item.value}}</option>
-              </select>
-            </div>
-          </div>
-
-          <p *ngIf="settings.geoCodeProvider > 0">Optionally enter a provider key. If you do not supply one, geocoding will cost .5 extra credits per document. If
-            using Bing you must specify your own provider key.</p>
-          <div *ngIf="settings.geoCodeProvider > 0" class="form-group">
-            <input type="text" id="geoCodeKey" [placeholder]="settings.geoCodeProvider != 2 ? 'Optional' : 'Required'" name="geoCodeKey"
-              [(ngModel)]="settings.geoCodeKey" #geoCodeKeyInput="ngModel" [required]="settings.geoCodeProvider == 2" size="100">
-          </div>
-
-          <p *ngIf="normalizations.length > 0">If you want to use one of your custom normalization data files, select it below. If no list is provided the Sovren
-            builtin normalizations will be used (english only). When using custom normalization files the language to be
-            used is determined by the Parser (the default fall back language is English if the Parser cannot find a match).
-            More details can be found
-            <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#normalizer-files')">here.</a>
-          </p>
-          <div class="form-group">
-            <div *ngIf="normalizations.length > 0" class="select">
-              <select id="normalizations" name="normalizations" [(ngModel)]="settings.normalizations">
-                <option [value]=""></option>
-                <option *ngFor="let item of normalizations" [value]="item">{{item}}</option>
-              </select>
-            </div>
-          </div>
-          <p *ngIf="normalizations.length === 0">
-            <strong>You have no custom normalization files. The Sovren builtin normalizations will be used. If you want to use custom
-              normalizations, use the API to upload it. More details can be found
-              <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#normalizer-files')">here.</a>
-            </strong>
-          </p>
-
-          <p *ngIf="skills.length> 0">If you want to use one of your custom skills lists, select it below. If no list is provided the Sovren builtin
-            skills list will be used. The parser automatically detects language and looks for a corresponding skills list
-            in that language, if no match is found this list is ignored. More details can be found
-            <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#parser-output-skills')">here.</a>
-          </p>
-          <div class="form-group">
-            <div *ngIf="skills.length > 0" class="select multiple">
-              <select id="skills" name="skills" [(ngModel)]="settings.skills" multiple>
-                <option [value]=""></option>
-                <option *ngFor="let item of skills" [value]="item">{{item}}</option>
-              </select>
-              <clr-checkbox *ngIf="settings.skills" [clrInline]="true" name="includeBuiltinSkills" [(ngModel)]="settings.includeBuiltinSkills">
-                Include Sovren Builtin Skills
-              </clr-checkbox>
-            </div>
-          </div>
-          <p *ngIf="skills.length === 0">
-            <strong>You have no custom skills list. The Sovren builtin skills list will be used. If you want to use a custom skills
-              list, use the API to upload it. More details can be found
-              <a href="javascript:void(0)" (click)="openExternal('ttps://docs.sovren.com/Documentation/ResumeParser#skills-terminology')">here.</a>
-            </strong>
-          </p>
-
-
-          <p *ngIf="aimEnabled">In order to be able to search and match documents you must first add them to an index. Indexes are collections
-            of documents (either jobs or resumes) and can be used as logical separations for your documents. Optionally specify
-            an index, or create one using the button below, to take advantage of Sovren's matching and searching engines.
-          </p>
-          <div *ngIf="aimEnabled" class="form-group">
-            <div *ngIf="indexes.length > 0" class="select">
-              <select id="index" name="index" [(ngModel)]="settings.index">
-                <option [value]=""></option>
-                <option *ngFor="let item of indexes" [value]="item.Name">{{item.Name}}</option>
-              </select>
-            </div>
-            <button type="button" class="btn btn-outline btn-sm" (click)="showIndexModal = true">Create new Index</button>
-          </div>
-
-
-          <p>
-            <strong *ngIf="!settings.inputDirectory" style="color:red">* </strong>Select a local directory containing the source documents to be parsed</p>
-          <div class="form-group">
-            <input id="sourcePath" type="text" name="sourcePath" [(ngModel)]="settings.inputDirectory" placeholder="Enter source path"
-              required size="100" />
-            <button class="btn btn-outline btn-sm" (click)="browseDirectory(setSource)">Browse...</button>
-          </div>
-
-          <p>
-            <strong *ngIf="!settings.outputDirectory" style="color:red">* </strong>Select a local directory to save the parsed documents to. Logs will also be saved here.</p>
-          <div class="form-group">
-            <input id="outputPath" type="text" name="outputPath" [(ngModel)]="settings.outputDirectory" placeholder="Enter output path"
-              required size="100" />
-            <button class="btn btn-outline btn-sm" (click)="browseDirectory(setOutput)">Browse...</button>
-          </div>
-
-          <p>Select this if you want to save these settings for future parsing transactions in this application.</p>
-          <div class="form-group">
-            <clr-checkbox [clrInline]="true" name="saveSettings" [(ngModel)]="settings.saveSettings"></clr-checkbox>
-          </div>
-          <br />
-          <button type="button" class="btn btn-primary" [routerLink]="['../Home']">Back</button>
-          <button type="submit" [clrLoading]="loading" class="btn btn-primary" [disabled]="settingsForm.form.invalid">Next</button>
-          <span *ngIf="loading">Preparing documents. This could take a while...</span>
-
-          <div *ngIf="errorMessage != null" class="alert alert-danger">
-            <div class="alert-items">
-              <div class="alert-item static">
-                <div class="alert-icon-wrapper">
-                  <clr-icon class="alert-icon" shape="exclamation-circle"></clr-icon>
+              <p>Optionally specify a known type to enable special processing.</p>
+              <div class="form-group">
+                <div class="select">
+                  <select id="knownType" name="knownType" [(ngModel)]="settings.knownType">
+                    <option *ngFor="let item of knownTypes | keys" [value]="item.value">{{item.value}}</option>
+                  </select>
                 </div>
-                <span class="alert-text">{{errorMessage}}</span>
+              </div>
+
+              <p>Recruiting terms in skills and job titles are ignored by default because these terms often appear in job orders
+                that are unrelated to recruiting. If this job order is for a recruiting or human resources position, then
+                select this.
+              </p>
+              <div class="form-group">
+                <clr-checkbox [clrInline]="true" name="includeRecruitingTerms" [(ngModel)]="settings.includeRecruitingTerms"></clr-checkbox>
+              </div>
+              <p>The parser defaults to extracting data from only the text that precedes the place in job orders where they
+                transition from describing the job itself to describing the company, hiring policies, background checks,
+                benefits, etc. This division of text normally works well, but in some job orders it can occur in the wrong
+                place. Select this to allow the parser to extract data from all of the text.</p>
+              <div class="form-group">
+                <clr-checkbox [clrInline]="true" name="includeSupplementalText" [(ngModel)]="settings.includeSupplementalText"></clr-checkbox>
+              </div>
+
+              <p>The parser defaults to returning full job titles. Select this to shorten job titles by excluding trailing phrases
+                that do not include job words, so that "Vice President" would be returned instead of "Vice President, Information
+                Systems".
+              </p>
+              <div class="form-group">
+                <clr-checkbox [clrInline]="true" name="preferShorterJobTitles" [(ngModel)]="settings.preferShorterJobTitles"></clr-checkbox>
               </div>
             </div>
-          </div>
 
+            <p>Select the format to save the parsed results as.</p>
+            <div class="form-group">
+              <div class="radio-inline">
+                <input type="radio" [(ngModel)]="settings.outputFormat" [value]="outputFormats.JSON" name="json" id="json">
+                <label for="json">JSON</label>
+              </div>
+              <div class="radio-inline">
+                <input type="radio" [(ngModel)]="settings.outputFormat" [value]="outputFormats.XML" name="xml" id="xml" checked>
+                <label for="xml">XML</label>
+              </div>
+            </div>
+
+            <p>Optionally select any of the below additional formats to convert the original file to.</p>
+            <div class="form-group">
+              <clr-checkbox [clrInline]="true" name="html" [(ngModel)]="settings.outputHtml">
+                HTML
+              </clr-checkbox>
+              <clr-checkbox [clrInline]="true" name="rtf" [(ngModel)]="settings.outputRtf">
+                RTF
+              </clr-checkbox>
+              <clr-checkbox [clrInline]="true" name="pdf" [(ngModel)]="settings.outputPdf">
+                PDF
+              </clr-checkbox>
+            </div>
+
+
+
+            <p *ngIf="normalizations.length > 0">If you want to use one of your custom normalization data files, select it below. If no list is provided the Sovren
+              builtin normalizations will be used (english only). When using custom normalization files the language to be
+              used is determined by the Parser (the default fall back language is English if the Parser cannot find a match).
+              More details can be found
+              <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#normalizer-files')">here.</a>
+            </p>
+            <div class="form-group">
+              <div *ngIf="normalizations.length > 0" class="select">
+                <select id="normalizations" name="normalizations" [(ngModel)]="settings.normalizations">
+                  <option [value]=""></option>
+                  <option *ngFor="let item of normalizations" [value]="item">{{item}}</option>
+                </select>
+              </div>
+            </div>
+            <p *ngIf="normalizations.length === 0">
+              <strong>You have no custom normalization files. The Sovren builtin normalizations will be used. If you want to use
+                custom normalizations, use the API to upload it. More details can be found
+                <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#normalizer-files')">here.</a>
+              </strong>
+            </p>
+
+            <p *ngIf="skills.length> 0">If you want to use one of your custom skills lists, select it below. If no list is provided the Sovren builtin
+              skills list will be used. The parser automatically detects language and looks for a corresponding skills list
+              in that language, if no match is found this list is ignored. More details can be found
+              <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#parser-output-skills')">here.</a>
+            </p>
+            <div class="form-group">
+              <div *ngIf="skills.length > 0" class="select multiple">
+                <select id="skills" name="skills" [(ngModel)]="settings.skills" multiple>
+                  <option [value]=""></option>
+                  <option *ngFor="let item of skills" [value]="item">{{item}}</option>
+                </select>
+                <clr-checkbox *ngIf="settings.skills" [clrInline]="true" name="includeBuiltinSkills" [(ngModel)]="settings.includeBuiltinSkills">
+                  Include Sovren Builtin Skills
+                </clr-checkbox>
+              </div>
+            </div>
+            <p *ngIf="skills.length === 0">
+              <strong>You have no custom skills list. The Sovren builtin skills list will be used. If you want to use a custom skills
+                list, use the API to upload it. More details can be found
+                <a href="javascript:void(0)" (click)="openExternal('ttps://docs.sovren.com/Documentation/ResumeParser#skills-terminology')">here.</a>
+              </strong>
+            </p>
+
+
+
+
+
+
+
+            <p>Select this if you want to save these settings for future parsing transactions in this application.</p>
+            <div class="form-group">
+              <clr-checkbox [clrInline]="true" name="saveSettings" [(ngModel)]="settings.saveSettings"></clr-checkbox>
+            </div>
+            <br />
+            <button type="button" class="btn btn-primary" (click)="currentStep = 2">Back</button>
+            <button type="submit" [clrLoading]="loading" class="btn btn-primary" [disabled]="settingsForm.form.invalid">Next</button>
+            <span *ngIf="loading">Preparing documents. This could take a while...</span>
+
+
+          </div>
         </section>
+
       </form>
+
       <form #summaryForm="ngForm" (ngSubmit)="onStartParsing()" [hidden]="!submitted">
         <clr-alert *ngIf="(totalFiles * costPerParse) > account.CreditsRemaining" [clrAlertType]="'alert-warning'" [clrAlertClosable]="false"
           [clrAlertAppLevel]="true">
