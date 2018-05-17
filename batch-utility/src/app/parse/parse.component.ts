@@ -115,7 +115,7 @@ export class ParseComponent implements OnInit {
      * If this call fails, then AIM is not enabled
      ****************************************************************************************************************************/
     try {
-      this.getIndexes();
+      await this.getIndexes();
       this.aimEnabled = true;
     }
     catch (ex) {
@@ -130,11 +130,11 @@ export class ParseComponent implements OnInit {
      ****************************************************************************************************************************/
     this.account = (await this.restSvc.getAccount()).Value;
     if (this.documentType == DocumentType.Resumes) {
-      this.settings = this.storageSvc.getBulkResumeParseSettings(); //settings can be saved on local machine
+      //this.settings = this.storageSvc.getBulkResumeParseSettings(); //settings can be saved on local machine
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, ResumeParserConnection);
     }
     else if (this.documentType == DocumentType.JobOrders) {
-      this.settings = this.storageSvc.getBulkJobOrderParseSettings() //settings can be saved on local machine
+      //this.settings = this.storageSvc.getBulkJobOrderParseSettings() //settings can be saved on local machine
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, JobParserConnection);
     }
 
@@ -188,10 +188,6 @@ export class ParseComponent implements OnInit {
       this.errorMessage = 'This path does not exist'
       return;
     }
-    if (!this.fileSystem.directoryExists(this.settings.outputDirectory)) {
-      this.errorMessage = 'Output Path does not exist'
-      return;
-    }
 
     this.account = (await this.restSvc.getAccount()).Value;
     this.loading = true;
@@ -208,13 +204,27 @@ export class ParseComponent implements OnInit {
       this.loading = false;
 
       this.totalFiles = fileList.length;
-      if ((this.totalFiles * this.costPerParse) > this.account.CreditsRemaining){
+      if ((this.totalFiles * this.costPerParse) > this.account.CreditsRemaining) {
         this.errorMessage = `Sorry, your account does not have enough credits to parse ${this.totalFiles.toLocaleString()} documents`;
       }
       else
         this.currentStep = 2;
     });
 
+  }
+
+  async checkOutputDirectory() {
+    if (!this.fileSystem.directoryExists(this.settings.outputDirectory)) {
+      this.errorMessage = 'The output path does not exist'
+      return;
+    }
+
+    if (this.settings.outputDirectory == this.settings.inputDirectory) {
+      this.errorMessage = 'Please select an output path that is different from the input path'
+      return;
+    }
+
+    this.currentStep = 8;
   }
 
   // async onSettingsSubmit() {
