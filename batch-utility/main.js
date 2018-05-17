@@ -8,7 +8,7 @@ let win;
 const store = new Store({
   name: 'user-settings',
   defaults: {
-    windowBounds: { width: 1600, height: 800 }
+    windowBounds: { width: 1600, height: 1000 }
   }
 });
 

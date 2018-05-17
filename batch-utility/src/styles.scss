@@ -1,12 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
 
-// p {
-//   color: #4AB9D1 !important;
-// }
-// a {
-//     color: #F4F4F4 !important;
-//     text-decoration: underline !important;
-// }
 body,
 .main-container {
   background: #292929 url(assets/pattern-grid-dark.jpg) repeat left top !important;
@@ -28,7 +21,10 @@ body,
 
 select[multiple] {
   background: #292929 !important;
+  border-color: #4AB9D1 !important;
+  min-width: 48% !important;
 }
+
 
 .clr-footer {
   margin-left: auto;

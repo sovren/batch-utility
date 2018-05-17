@@ -31,7 +31,7 @@ This project uses [electron-builder](https://www.electron.build) to build and pa
 - `npm run package-mac`
 - `npm run package-linux`
 
-Notes: Mac packages must be created from a device running macOS. Windows and Linux (`.AppImage`) packages can be created from both Windows and Linux devices. To generate a Linux `.deb` package, you must change the build target and run the script on a Linux device. For more information, visit [Multi-Platform Builds](https://www.electron.build/multi-platform-build)
+Note: Mac packages must be created from a device running macOS. Windows and Linux (`.AppImage`) packages can be created from both Windows and Linux devices. To generate a Linux `.deb` package, you must change the build target and run the script on a Linux device. For more information, visit [Multi-Platform Builds](https://www.electron.build/multi-platform-build)
 
 
 ## Further help

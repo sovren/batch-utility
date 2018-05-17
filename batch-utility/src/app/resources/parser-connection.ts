@@ -115,9 +115,9 @@ function setupCommonFields(settings: ParseSettings, filePath: string): BaseReque
     if (settings.skills) {
         request.SkillsData = settings.skills;
         let builtinIndex = request.SkillsData.indexOf('builtin');
-        if (!settings.excludeBuiltinSkills && builtinIndex== -1)
+        if (settings.includeBuiltinSkills && builtinIndex== -1)
             request.SkillsData.push('builtin')
-        if (settings.excludeBuiltinSkills && builtinIndex >= 0)
+        if (!settings.includeBuiltinSkills && builtinIndex >= 0)
             request.SkillsData.splice(builtinIndex,1);
     }
 

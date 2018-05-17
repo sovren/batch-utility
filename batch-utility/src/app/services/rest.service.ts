@@ -159,13 +159,17 @@ export class RestService {
         return parser.parseFromString(val, "text/xml");
     }
 
+    /****************************************************************************************************************************
+     * This is where we set the SaaS URL. If you need to point at an older version, you can do that here, however this app is 
+     * specifically designed for version 9, so downgrade at your own risk
+     ****************************************************************************************************************************/
     baseUrlPlus(...paths: string[]) {
         let accountUser = this.storage.getLocalLoginInfo();
         const fullPath = paths.join('/');
         if (accountUser.euRegion)
-            return `https://eu-rest.resumeparsing.com/v8/${fullPath}`;
+            return `https://eu-rest.resumeparsing.com/v9/${fullPath}`;
 
-        return `https://rest.resumeparsing.com/v8/${fullPath}`;
+        return `https://rest.resumeparsing.com/v9/${fullPath}`;
     }
 
 }

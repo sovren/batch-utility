@@ -103,10 +103,10 @@ export class ParseComponent implements OnInit {
 
 
     /****************************************************************************************************************************
-   * The /skills endpoint returns us a list of all skills.
-   * Because the parser automatically detects language and looks for a corresponding skills list in that language,
-   * we only show the unique name values
-   ****************************************************************************************************************************/
+     * The /normalizations endpoint returns us a list of all normalizations.
+     * Because the parser automatically detects language and looks for a corresponding skills list in that language,
+     * we only show the unique name values
+     ****************************************************************************************************************************/
     this.normalizations = (await this.restSvc.getNormalizations()).Value.map(normalization => normalization.Name);
     this.normalizations = this.normalizations.filter((value, index, self) => { return self.indexOf(value) === index });
 
@@ -129,14 +129,11 @@ export class ParseComponent implements OnInit {
      * ResourcePool is a custom class that enables us to control the number of threads active at any given time
      ****************************************************************************************************************************/
     this.account = (await this.restSvc.getAccount()).Value;
-    if (this.documentType == DocumentType.Resumes) {
-      //this.settings = this.storageSvc.getBulkResumeParseSettings(); //settings can be saved on local machine
+    if (this.documentType == DocumentType.Resumes)
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, ResumeParserConnection);
-    }
-    else if (this.documentType == DocumentType.JobOrders) {
-      //this.settings = this.storageSvc.getBulkJobOrderParseSettings() //settings can be saved on local machine
+    else if (this.documentType == DocumentType.JobOrders)
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, JobParserConnection);
-    }
+
 
     /****************************************************************************************************************************
      * Job order parsing always costs 2 credits. 
@@ -178,7 +175,7 @@ export class ParseComponent implements OnInit {
     return false;
   }
 
-  async onDirectoriesSelected() {
+  async onInputDirectorySelected() {
     if (this.loading)
       return;
 
@@ -192,8 +189,6 @@ export class ParseComponent implements OnInit {
     this.account = (await this.restSvc.getAccount()).Value;
     this.loading = true;
     this.filesToParse = new Array<any>();
-
-
 
     /****************************************************************************************************************************
      * This method will iterate through all files in the directory and each of it's subdirectories
@@ -214,6 +209,8 @@ export class ParseComponent implements OnInit {
   }
 
   async checkOutputDirectory() {
+    this.errorMessage = null;
+
     if (!this.fileSystem.directoryExists(this.settings.outputDirectory)) {
       this.errorMessage = 'The output path does not exist'
       return;
@@ -225,29 +222,6 @@ export class ParseComponent implements OnInit {
     }
 
     this.currentStep = 8;
-  }
-
-  // async onSettingsSubmit() {
-
-  //   this.saveSettings();
-  //   this.submitted = true;
-  // }
-
-  /* This function is used to save settings to a user's local machine (e.g AppData on Windows machine) */
-  private saveSettings() {
-    if (!this.settings.saveSettings) {
-      if (this.documentType == DocumentType.Resumes)
-        this.storageSvc.setBulkResumeParseSettings(new ParseSettings());
-      else if (this.documentType == DocumentType.JobOrders)
-        this.storageSvc.setBulkJobOrderParseSettings(new ParseSettings());
-
-      return;
-    }
-
-    if (this.documentType == DocumentType.Resumes)
-      this.storageSvc.setBulkResumeParseSettings(this.settings);
-    else if (this.documentType == DocumentType.JobOrders)
-      this.storageSvc.setBulkJobOrderParseSettings(this.settings);
   }
 
 

@@ -33,7 +33,7 @@
 
 
             <button type="button" class="btn btn-primary" [routerLink]="['../Home']">Back</button>
-            <button type="button" (click)="onDirectoriesSelected()" [clrLoading]="loading" class="btn btn-primary" [disabled]="!settings.inputDirectory">Next</button>
+            <button type="button" (click)="onInputDirectorySelected()" [clrLoading]="loading" class="btn btn-primary" [disabled]="!settings.inputDirectory">Next</button>
             <span *ngIf="loading">Calculating... This could take a while...</span>
 
             <div *ngIf="errorMessage != null" class="alert alert-danger">
@@ -55,6 +55,11 @@
               <span class="sovren-orange">{{(this.totalFiles * this.costPerParse).toLocaleString()}} credits</span>.
             </h2>
             <div *ngIf="aimEnabled">
+              <br />
+              <br />
+              <h2>
+                AI Matching Indexing
+              </h2>
               <br />
               <br />
               <h2>
@@ -85,7 +90,7 @@
 
           <div name="STEP3_GEOCODING" [hidden]="currentStep != 3">
             <h2>
-              Optional geocoing if needed.
+              Optional geocoing if needed
             </h2>
             <br />
             <br />
@@ -122,28 +127,28 @@
 
           <div name="STEP4_SKILLS" *ngIf="skills.length > 0" [hidden]="currentStep != 4">
             <h2>
-              Skills customization is the most popular and flexible feature of our parser. You can add and remove skills in our existing
-              list, create your own skills lists, and even maintain multiple lists for multi-tenant implementations. Combining
-              your custom skills taxonomy with Sovren's skills taxonomy can provide superior parsing results.
+              Skills
             </h2>
             <br />
             <br />
             <h2>
-              If you want to use any of your custom skills lists, select them below. If no list is selected, the Sovren builtin skills list
-              will be used. The parser automatically detects language and looks for a corresponding skills list in that language,
-              if no match is found this list is ignored. More details can be found
+              If you want to use any of your custom skills lists, select them below. If no list is selected, our builtin skills
+              list will be used. The parser automatically detects language and looks for a corresponding skills list in that
+              language, if no match is found this list is ignored. More details can be found
               <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#skills-terminology')">here.</a>
             </h2>
             <br />
+            <h2>We strongly recommend that in addition to using your custom skills lists, you also use our built in list.</h2>
+              <clr-checkbox [clrInline]="true" name="includeBuiltinSkills" [(ngModel)]="settings.includeBuiltinSkills">
+                  Yes, also use built in skills list
+              </clr-checkbox>
+              <br />
+              <br />
             <div class="form-group">
               <div class="select multiple wide-select">
                 <select id="skills" name="skills" [(ngModel)]="settings.skills" multiple>
                   <option *ngFor="let item of skills" [value]="item">{{item}}</option>
                 </select>
-                <h2 *ngIf="settings.skills && settings.skills.length > 0">When using your own custom skills lists, you can choose to not include our builtin skills list. Select the checkbox below
-                  to exclude it.</h2>
-                <clr-checkbox *ngIf="settings.skills && settings.skills.length > 0"  [clrInline]="true" name="excludeBuiltinSkills" [(ngModel)]="settings.excludeBuiltinSkills">
-                </clr-checkbox>
               </div>
             </div>
             <br />
@@ -153,33 +158,25 @@
               class="btn btn-primary">Next</button>
           </div>
 
-          <div name="STEP5_NORMALIZATIONS" [hidden]="currentStep != 5">
-            <h2>The Sovren Normalizer is offered as a SaaS API that uses user-editable files to control the output. The normalizer
-              includes built-in normalization lists but you may also implement your own custom lists.</h2>
+          <div name="STEP5_NORMALIZATIONS" *ngIf="normalizations.length > 0" [hidden]="currentStep != 5">
+            <h2>Normalizations</h2>
             <br />
             <br />
-            <div *ngIf="normalizations.length > 0">
-              <h2>If you want to use one of your custom normalization data files, select it below. If no list is selected, the
-                Sovren builtin normalizations will be used (English only). When using custom normalization files the language
-                to be used is determined by the Parser (the default fall back language is English if the Parser cannot find
-                a match). More details can be found
-                <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#normalizer-files')">here.</a>
-              </h2>
-              <br />
-              <div class="form-group">
-                <div class="select wide-select">
-                  <select id="normalizations" name="normalizations" [(ngModel)]="settings.normalizations">
-                    <option [value]=""></option>
-                    <option *ngFor="let item of normalizations" [value]="item">{{item}}</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <h2 *ngIf="normalizations.length === 0">
-              You have no custom normalization files. The Sovren builtin normalizations will be used. If you want to use custom normalizations,
-              use the API to upload them. More details can be found
+            <h2>If you want to use one of your custom normalization data files, select it below. If no list is selected, our
+              builtin normalizations will be used (English only). When using custom normalization files the language
+              to be used is determined by the Parser (the default fall back language is English if the Parser cannot find
+              a match). More details can be found
               <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#normalizer-files')">here.</a>
             </h2>
+            <br />
+            <div class="form-group">
+              <div class="select wide-select">
+                <select id="normalizations" name="normalizations" [(ngModel)]="settings.normalizations">
+                  <option [value]=""></option>
+                  <option *ngFor="let item of normalizations" [value]="item">{{item}}</option>
+                </select>
+              </div>
+            </div>
             <br/>
             <br/>
             <button type="button" class="btn btn-primary" (click)="currentStep = skills.length > 0 ? 4 : 3">Back</button>
@@ -187,9 +184,11 @@
           </div>
 
           <div name="STEP6_CONFIGURATION" [hidden]="currentStep != 6">
+            <h2>Configuration</h2>
+            <br />
+            <br />
             <div *ngIf="documentType == 0">
-              <h2>The Parser is highly configurable to meet your needs, but by default, is configured to parse in a way that
-                meets most users' needs. If you want to use a custom configuration, you can enter it here. If this is not
+              <h2>The Parser is highly configurable and by default is configured to meet most users' needs. If you want to use a custom configuration, you can enter it here. If this is not
                 specified, the default parser configuration will be used. For more information regarding the parser configuration
                 string, the individual options, and assistance generating one, refer to the
                 <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/Documentation/ResumeParser#configuration-basics-overview')">Parser Configuration Documentation</a>.
@@ -202,9 +201,8 @@
             </div>
 
             <div *ngIf="documentType == 1">
-              <h2>The Parser is highly configurable to meet your needs, but by default, is configured to parse in a way that
-                meets most users' needs. Below are several
-                <span style="color:#F26522">optional</span> settings that can help you fine-tune your results.</h2>
+              <h2>The Parser is highly configurable and by default is configured to meet most users' needs. <span style="color:#F26522">We strongly recommend that you do not change</span>
+                any of the options below.</h2>
               <br />
               <br />
               <h2>Optionally enter a
@@ -215,7 +213,7 @@
               <div class="form-group">
                 <input type="text" id="countryCode" placeholder="Optional" name="countryCode" [(ngModel)]="settings.countryCode" size="100">
               </div>
-              <br />
+              <!-- <br />
               <br />
               <h2>Optionally enter an
                 <a href="javascript:void(0)" (click)="openExternal('https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes')">ISO 639-1 two letter language code</a> indicating the language to be assumed in cases where the language
@@ -223,7 +221,7 @@
               <br />
               <div class="form-group">
                 <input type="text" id="language" placeholder="Optional" name="language" [(ngModel)]="settings.language" size="100">
-              </div>
+              </div> 
               <br />
               <br />
               <h2>Optionally specify a known type to enable special processing. This tells the parser to expect a certain format
@@ -236,11 +234,11 @@
                     <option *ngFor="let item of knownTypes | keys" [value]="item.value">{{item.value}}</option>
                   </select>
                 </div>
-              </div>
+              </div> -->
               <br />
               <br />
               <h2>Recruiting terms in skills and job titles are ignored by default because these terms often appear in job orders
-                that are unrelated to recruiting. If this job order is for a recruiting or human resources position, then
+                that are unrelated to recruiting. If the job orders to be parsed are primarily for recruiting or human resources positions, then
                 check the box below.
               </h2>
               <div class="form-group">
@@ -255,7 +253,7 @@
               <div class="form-group">
                 <clr-checkbox [clrInline]="true" name="includeSupplementalText" [(ngModel)]="settings.includeSupplementalText"></clr-checkbox>
               </div>
-              <br />
+              <!-- <br />
               <br />
               <h2>The parser defaults to returning full job titles. Check the box below to shorten job titles by excluding trailing
                 phrases that do not include job words, so that "Vice President" would be returned instead of "Vice President,
@@ -263,7 +261,7 @@
               </h2>
               <div class="form-group">
                 <clr-checkbox [clrInline]="true" name="preferShorterJobTitles" [(ngModel)]="settings.preferShorterJobTitles"></clr-checkbox>
-              </div>
+              </div> -->
             </div>
 
             <br/>
@@ -319,8 +317,6 @@
 
             <button type="button" class="btn btn-primary" (click)="currentStep = 6">Back</button>
             <button type="button" (click)="checkOutputDirectory()" [clrLoading]="loading" class="btn btn-primary" [disabled]="!settings.outputDirectory">Next</button>
-            <!-- <clr-checkbox [clrInline]="true" name="saveSettings" [(ngModel)]="settings.saveSettings"></clr-checkbox>
-            <span>Select this if you want to save these settings for future parsing transactions in this application.</span> -->
 
             <div *ngIf="errorMessage != null" class="alert alert-danger">
               <div class="alert-items">
@@ -371,7 +367,7 @@
         <div *ngIf="skills.length > 0">
           <strong>Skills: </strong>
           <label *ngIf="settings.skills">{{settings.skills}}</label>
-          <label *ngIf="settings.skills && settings.skills.length > 0 && !settings.excludeBuiltinSkills">,builtin</label>
+          <label *ngIf="settings.skills && settings.skills.length > 0 && settings.includeBuiltinSkills">,builtin</label>
           <label *ngIf="!settings.skills || settings.skills.length == 0">builtin</label>
         </div>
         <div *ngIf="settings.configurationString">
@@ -402,8 +398,12 @@
           <strong>Prefer Shorter Job Titles: </strong>
           <label>{{settings.preferShorterJobTitles}}</label>
         </div>
+        <div>
+            <strong>Parse Result Format: </strong>
+            <label>{{settings.outputFormat == outputFormats.JSON ? 'JSON' : 'XML'}}</label>
+          </div>
         <div *ngIf="settings.outputHtml || settings.outputRtf || settings.outputPdf">
-          <strong>Results Output Format: </strong>
+          <strong>Convert Original Files To: </strong>
           <label *ngIf="settings.outputHtml">Html </label>
           <label *ngIf="settings.outputRtf">Rtf </label>
           <label *ngIf="settings.outputPdf">Pdf</label>
@@ -426,7 +426,7 @@
         <br />
         <button type="button" class="btn btn-primary" (click)="backToSettings()">Back</button>
         <button type="submit" class="btn btn-primary" *ngIf="summaryResults.numParsed == 0 && !parsing" [disabled]="summaryForm.form.invalid || (totalFiles * costPerParse) > account.CreditsRemaining">Parse!</button>
-        <button type="submit" class="btn btn-info" *ngIf="summaryResults.numParsed > 0 && !parsing" [disabled]="summaryForm.form.invalid || (totalFiles * costPerParse) > account.CreditsRemaining">Restart</button>
+        <button type="submit" class="btn btn-info" *ngIf="summaryResults.numParsed > 0 && !parsing && summaryResults.percentComplete != 100" [disabled]="(totalFiles * costPerParse) > account.CreditsRemaining">Restart Parsing</button>
         <button type="button" *ngIf="summaryResults.percentComplete == 100" class="btn btn-primary" (click)="electronSvc.remote.getCurrentWindow().close()">Exit</button>
         <button type="button" *ngIf="parsing && !cancellationToken.isCancelled()" class="btn btn-info" (click)="cancellationToken.cancel()">Stop!</button>
         <span *ngIf="cancellationToken.isCancelled() && summaryResults.percentComplete != 100 && summaryResults.numParsed > 0">Parsing stopped!</span>
