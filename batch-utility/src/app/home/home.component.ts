@@ -9,33 +9,17 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { RestService } from '../services/rest.service';
+import { ElectronService } from 'ngx-electron';
 
 @Component({
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
 
-export class HomeComponent implements OnInit {
+export class HomeComponent {
 
-  aimEnabled: boolean;
-  loading: boolean = true;
+  constructor(private restSvc: RestService, public electronSvc: ElectronService, private router: Router) { }
 
-  constructor(private restSvc: RestService, private router: Router) { }
-
-  async ngOnInit() {
-    /****************************************************************************************************************************
-     * We can check if AIM is enabled by calling the /index endpoint
-     * If this call fails, then AIM is not enabled
-     ****************************************************************************************************************************/
-    try {
-      await this.restSvc.getIndexes();
-      this.aimEnabled = true;
-    }
-    catch {
-      this.aimEnabled = false;
-    }
-    this.loading = false;
-  }
 
   parseResumes() {
     this.router.navigate(['./ParseResumes']);
@@ -43,6 +27,11 @@ export class HomeComponent implements OnInit {
 
   parseJobOrders() {
     this.router.navigate(['./ParseJobOrders']);
+  }
+
+  // This function will open a url in the user's browser
+  openExternal(url: string) {
+    this.electronSvc.shell.openExternal(url);
   }
 
 }

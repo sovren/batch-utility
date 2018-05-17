@@ -1,51 +1,37 @@
-<h1 class="white-text center pad-top">
-  Welcome to the Sovren SaaS Utility
-</h1>
-
-<div class="row">
-  <div class="col-lg-12">
-    <p class="white-text">Please select a function below to get started.</p>
-  </div>
+<h2>
+  Welcome to the Sovren SaaS Utility! We want to help you get up and running as quickly as possible. The following steps will
+  walk you through the services and settings your account has access to so you can configure them to best meet your needs.
+</h2>
+<br />
+<br />
+<h2>
+  To get started, please select the type of document you want to batch parse.
+</h2>
+<br />
+<br />
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <a (click)="parseResumes()" class="card clickable">
+        <div class="card-block">
+            <div class="card-header">
+                Resumes
+            </div>
+        </div>
+    </a>
 </div>
 
-
-<div *ngIf="!loading">
-  <div class="row">
-    <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
-      <a (click)="parseResumes()" class="card clickable">
-        <div *ngIf="!aimEnabled" class="card-block">
-          <h3 class="card-title">Bulk Parse Resumes</h3>
-          <p class="card-text">
-            Parse a set of resume documents using the Sovren Parsing Service.
-          </p>
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <a (click)="parseJobOrders()" class="card clickable">
+        <div class="card-block">
+            <div class="card-header">
+                Jobs
+            </div>
         </div>
-        <div *ngIf="aimEnabled" class="card-block">
-          <h3 class="card-title">Bulk Parse and Optionally Index Resumes</h3>
-          <p class="card-text">
-            Parse a set of resume documents using the Sovren Parsing Service. You can choose to add the documents to an index to provide
-            the ability to search and perform high-quality profile-based matching.
-          </p>
-        </div>
-      </a>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
-      <a (click)="parseJobOrders()" class="card clickable">
-        <div *ngIf="!aimEnabled" class="card-block">
-          <h3 class="card-title">Bulk Parse Jobs</h3>
-          <p class="card-text">
-            Parse a set of job order documents using the Sovren Parsing Service.
-          </p>
-        </div>
-        <div *ngIf="aimEnabled" class="card-block">
-          <h3 class="card-title">Bulk Parse and Optionally Index Jobs</h3>
-          <p class="card-text">
-            Parse a set of job order documents using the Sovren Parsing Service. You can choose to add the documents to an index to provide
-            the ability to search and perform high-quality profile-based matching.
-          </p>
-        </div>
-      </a>
-    </div>
-  </div>
+    </a>
 </div>
+<br />
+<br />
+<h3>
+  Please refer to our documentation <a href="javascript:void(0)" (click)="openExternal('https://docs.sovren.com/')">here</a> if you have any questions.
+</h3>
+
+

@@ -59,7 +59,7 @@ export class ParseComponent implements OnInit {
   configuring: boolean = false;
   loading: boolean = false; //a value of true will show a loading icon when counting files in the source directory
   parsing: boolean = false; //a value of true will make the parsing progress bar visible
-  submitted: boolean = false; //a value of true will show the summary page
+  //submitted: boolean = false; //a value of true will show the summary page
   currentStep: number = 1;
 
   //index variables
@@ -115,7 +115,7 @@ export class ParseComponent implements OnInit {
      * If this call fails, then AIM is not enabled
      ****************************************************************************************************************************/
     try {
-      this.getIndexes();
+      await this.getIndexes();
       this.aimEnabled = true;
     }
     catch (ex) {
@@ -130,11 +130,11 @@ export class ParseComponent implements OnInit {
      ****************************************************************************************************************************/
     this.account = (await this.restSvc.getAccount()).Value;
     if (this.documentType == DocumentType.Resumes) {
-      this.settings = this.storageSvc.getBulkResumeParseSettings(); //settings can be saved on local machine
+      //this.settings = this.storageSvc.getBulkResumeParseSettings(); //settings can be saved on local machine
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, ResumeParserConnection);
     }
     else if (this.documentType == DocumentType.JobOrders) {
-      this.settings = this.storageSvc.getBulkJobOrderParseSettings() //settings can be saved on local machine
+      //this.settings = this.storageSvc.getBulkJobOrderParseSettings() //settings can be saved on local machine
       this.pool = new ResourcePool(this.restSvc, this.account.MaximumConcurrentRequests, JobParserConnection);
     }
 
@@ -185,11 +185,7 @@ export class ParseComponent implements OnInit {
     this.errorMessage = null;
 
     if (!this.fileSystem.directoryExists(this.settings.inputDirectory)) {
-      this.errorMessage = 'Source Path does not exist'
-      return;
-    }
-    if (!this.fileSystem.directoryExists(this.settings.outputDirectory)) {
-      this.errorMessage = 'Output Path does not exist'
+      this.errorMessage = 'This path does not exist'
       return;
     }
 
@@ -208,7 +204,7 @@ export class ParseComponent implements OnInit {
       this.loading = false;
 
       this.totalFiles = fileList.length;
-      if ((this.totalFiles * this.costPerParse) > this.account.CreditsRemaining){
+      if ((this.totalFiles * this.costPerParse) > this.account.CreditsRemaining) {
         this.errorMessage = `Sorry, your account does not have enough credits to parse ${this.totalFiles.toLocaleString()} documents`;
       }
       else
@@ -217,16 +213,25 @@ export class ParseComponent implements OnInit {
 
   }
 
-  async onSettingsSubmit() {
+  async checkOutputDirectory() {
+    if (!this.fileSystem.directoryExists(this.settings.outputDirectory)) {
+      this.errorMessage = 'The output path does not exist'
+      return;
+    }
 
-    this.saveSettings();
-    this.submitted = true;
-    /****************************************************************************************************************************
-     * Using geocoding without providing your own key costs an extra .5 credits per parse
-     ****************************************************************************************************************************/
-    if (this.settings.geoCodeProvider != GeoCodeProvider.None && !this.settings.geoCodeKey)
-      this.costPerParse += .5;
+    if (this.settings.outputDirectory == this.settings.inputDirectory) {
+      this.errorMessage = 'Please select an output path that is different from the input path'
+      return;
+    }
+
+    this.currentStep = 8;
   }
+
+  // async onSettingsSubmit() {
+
+  //   this.saveSettings();
+  //   this.submitted = true;
+  // }
 
   /* This function is used to save settings to a user's local machine (e.g AppData on Windows machine) */
   private saveSettings() {
@@ -463,7 +468,7 @@ export class ParseComponent implements OnInit {
       this.cancellationToken.cancel();
 
     this.summaryResults = new ParseSummaryResults();
-    this.submitted = false;
+    this.currentStep = 7;
   }
 
 

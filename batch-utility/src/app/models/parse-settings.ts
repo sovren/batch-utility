@@ -13,7 +13,7 @@ export class ParseSettings {
     geoCodeKey: string;
     normalizations: string;
     skills: string[];
-    includeBuiltinSkills: boolean;
+    excludeBuiltinSkills: boolean;
     index: string;
     inputDirectory: string;
     outputDirectory: string;
@@ -25,7 +25,7 @@ export class ParseSettings {
     constructor() {
         this.geoCodeProvider = GeoCodeProvider.None;
         this.outputFormat = OutputFormat.JSON;
-        this.includeBuiltinSkills = true;
+        this.excludeBuiltinSkills = false;
     }
 
 }
