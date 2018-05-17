@@ -59,7 +59,7 @@ export class ParseComponent implements OnInit {
   configuring: boolean = false;
   loading: boolean = false; //a value of true will show a loading icon when counting files in the source directory
   parsing: boolean = false; //a value of true will make the parsing progress bar visible
-  submitted: boolean = false; //a value of true will show the summary page
+  //submitted: boolean = false; //a value of true will show the summary page
   currentStep: number = 1;
 
   //index variables
@@ -185,7 +185,7 @@ export class ParseComponent implements OnInit {
     this.errorMessage = null;
 
     if (!this.fileSystem.directoryExists(this.settings.inputDirectory)) {
-      this.errorMessage = 'Source Path does not exist'
+      this.errorMessage = 'This path does not exist'
       return;
     }
     if (!this.fileSystem.directoryExists(this.settings.outputDirectory)) {
@@ -217,16 +217,11 @@ export class ParseComponent implements OnInit {
 
   }
 
-  async onSettingsSubmit() {
+  // async onSettingsSubmit() {
 
-    this.saveSettings();
-    this.submitted = true;
-    /****************************************************************************************************************************
-     * Using geocoding without providing your own key costs an extra .5 credits per parse
-     ****************************************************************************************************************************/
-    if (this.settings.geoCodeProvider != GeoCodeProvider.None && !this.settings.geoCodeKey)
-      this.costPerParse += .5;
-  }
+  //   this.saveSettings();
+  //   this.submitted = true;
+  // }
 
   /* This function is used to save settings to a user's local machine (e.g AppData on Windows machine) */
   private saveSettings() {
@@ -463,7 +458,7 @@ export class ParseComponent implements OnInit {
       this.cancellationToken.cancel();
 
     this.summaryResults = new ParseSummaryResults();
-    this.submitted = false;
+    this.currentStep = 7;
   }
 
 
