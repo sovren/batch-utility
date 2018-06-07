@@ -24,7 +24,7 @@ export class ResumeParserConnection implements IConnection {
     constructor(private restSvc: RestService) {
     }
 
-    async parse(settings: ParseSettings, filePath: string): Promise<ParseResponse> {
+    async parse(settings: ParseSettings, filePath: string, documentId: string): Promise<ParseResponse> {
         return new Promise<ParseResponse>((resolve, reject) => {
             let request = setupCommonFields(settings, filePath);
             
@@ -33,7 +33,7 @@ export class ResumeParserConnection implements IConnection {
                 resumeParseRequest.Configuration = settings.configurationString;
 
             this.restSvc.parseResume(resumeParseRequest).then((response: ParseResponse) => {
-                handleParseResponse(response, settings, filePath)
+                handleParseResponse(response, settings, documentId)
                 resolve(response);
             }).catch((e) => {
                 console.log(e);
@@ -51,7 +51,7 @@ export class JobParserConnection implements IConnection {
     constructor(private restSvc: RestService) {
     }
 
-    async parse(settings: ParseSettings, filePath: string): Promise<ParseResponse> {
+    async parse(settings: ParseSettings, filePath: string, documentId: string): Promise<ParseResponse> {
         return new Promise<ParseResponse>((resolve, reject) => {
             let request = setupCommonFields(settings, filePath);
 
@@ -66,7 +66,7 @@ export class JobParserConnection implements IConnection {
             }
 
             this.restSvc.parseJob(jobParseRequest).then((response: ParseResponse) => {
-                handleParseResponse(response, settings, filePath)
+                handleParseResponse(response, settings, documentId)
                 resolve(response);
             }).catch((e) => {
                 reject(e);
@@ -138,11 +138,7 @@ function getBase64(file: string): string {
     return new Buffer(bitmap).toString('base64');
 }
 
-function handleParseResponse(response: ParseResponse, settings: ParseSettings, fullInputPath: string){
-
-    //get full path to save the parsed document
-    //this will strip the input directory from the original file path, but keep the subfolders
-    let fileName = fullInputPath.replace(settings.inputDirectory.replace(/\//g,'/'),'');
+function handleParseResponse(response: ParseResponse, settings: ParseSettings, documentId: string){
 
     
     if (settings.outputFormat == OutputFormat.XML)
@@ -165,8 +161,8 @@ function handleParseResponse(response: ParseResponse, settings: ParseSettings, f
     function writeFile(folder: string, document: string, fileType:string = null){
         if (fileType == null)
             fileType = folder;
-        let fullOutputPath = `${path.join(settings.outputDirectory, folder)}/${fileName}.${fileType}`;
-        ensureDirectoryExistence(fullOutputPath);
+        let fullOutputPath = `${path.join(settings.outputDirectory, folder)}/${documentId}.${fileType}`;
+        //ensureDirectoryExistence(fullOutputPath);
         
         if (fileType == 'pdf') //pdfs are returned as base64
             fs.writeFileSync(fullOutputPath, document, 'base64');

@@ -6,6 +6,7 @@ import * as moment from 'moment';
 
 export class AppLogger {
     private infoLogger: any;
+    private mapLogger: any;
     private parseErrorLogger: any;
     private geocodeErrorLogger: any;
     private conversionErrorLogger: any;
@@ -35,6 +36,21 @@ export class AppLogger {
                     maxsize: '10000000', //10MB
                     level: 'info',
                     json: false
+                })
+            ]
+        });
+
+        this.mapLogger = new (winston.Logger)({
+            transports: [
+                new (winston.transports.File)({
+                    filename: `${logDirectory}/${moment().format("YYYY-MM-DD")}-file_mappings.log`,
+                    timestamp: tsFormat,
+                    maxsize: '10000000', //10MB
+                    level: 'info',
+                    json: false,
+                    formatter: function(options) {
+                        return options.message;
+                    }
                 })
             ]
         });
@@ -90,6 +106,10 @@ export class AppLogger {
 
     log(message: string, data?: any) {
         this.infoLogger.info(message, data);
+    }
+
+    logMap(documentName, documentId) {
+        this.mapLogger.info(`${documentName} = ${documentId}`);
     }
 
     logParseError(message: string, data?: any) {

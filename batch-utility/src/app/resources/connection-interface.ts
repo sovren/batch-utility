@@ -6,6 +6,6 @@ export interface IConnectionContructor {
 }
 
 export interface IConnection {
-    parse(settings: ParseSettings, file: string);
+    parse(settings: ParseSettings, file: string, documentId: string);
 }
 

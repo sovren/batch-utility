@@ -84,7 +84,7 @@ export class ParseComponent implements OnInit {
   summaryResults: ParseSummaryResults = new ParseSummaryResults(); //successes, errors, num parsed, etc.
 
 
-
+  currentlyIndexing: boolean = false;
 
   constructor(private router: Router, private storageSvc: StorageHelper, private fileSystem: FileSystem,
     private restSvc: RestService, public electronSvc: ElectronService, private zone: NgZone) { }
@@ -264,8 +264,15 @@ export class ParseComponent implements OnInit {
     while (!token.isCancelled() && documents.length > 0 && (conn = await this.pool.getConnection()) && conn) {
       let document = documents.pop();
       /* We get filename from the full path so we can use it in our logs. Windows and Linux use different slashes so we have consider both */
-      let documentFileName = document.replace(this.settings.inputDirectory.replace(/\//g, '/'), '').replace(/^\\/g, '').replace(/^\//g, '')
-      let result = conn.parse(this.settings, document).then(async (response: ParseResponse) => {
+      let documentFileName = document.replace(this.settings.inputDirectory.replace(/\//g, '/'), '').replace(/^\\/g, '').replace(/^\//g, '');
+      /****************************************************************************************************************************
+       * When indexing, the documentID MUST only contain letters, numbers, underscores, and dashes. And it must be unique.
+       * We just use a GUID
+      ****************************************************************************************************************************/
+      let documentId = Guid.newGuid();
+      //we save all files with a guid to make sure they are unique. a mapping file is created to map the source to the output
+      this.appLogger.logMap(documentFileName, documentId);
+      let result = conn.parse(this.settings, document, documentId).then(async (response: ParseResponse) => {
         if (this.account.CreditsRemaining > response.Value.CreditsRemaining) //async causes this to jump around slightly. just show the lowest value for display purposes
           this.account.CreditsRemaining = response.Value.CreditsRemaining;
 
@@ -288,20 +295,20 @@ export class ParseComponent implements OnInit {
          * This allows us start another parsing transaction as soon as possible to maximize speed.
          ****************************************************************************************************************************/
         this.pool.release(conn);
-        this.appLogger.log(`${documentFileName} parsed successfully`);
+        this.appLogger.log(`${documentFileName} (${documentId}) parsed successfully`);
 
         if (this.settings.index) {
           /****************************************************************************************************************************
            * When indexing, the documentID MUST only contain letters, numbers, underscores, and dashes.
            * We strip out any other characters here and replace them with an underscore.
            ****************************************************************************************************************************/
-          let documentId = documentFileName.replace(/[^0-9a-zA-Z_-]/g, '_');
           docsToIndex.push(new IndexRequest(documentId, response.Value.ParsedDocument));
 
           /****************************************************************************************************************************
            * We index documents in batches of 50. Bigger batches will sometimes cause the payload to be too big and return a 404 error
+           * Only let one index request be occuring at a time
            ****************************************************************************************************************************/
-          if (this.summaryResults.numParsedSuccessfully % 50 == 0) {
+          if (docsToIndex.length > 50 && !this.currentlyIndexing) {
             this.indexDocuments(docsToIndex.splice(0, 50));
           }
         }
@@ -315,19 +322,19 @@ export class ParseComponent implements OnInit {
          ****************************************************************************************************************************/
         if (response.Value.GeocodeResponse && response.Value.GeocodeResponse.Code != 'Success' && response.Value.GeocodeResponse.Code != 'InsufficientData') {
           this.summaryResults.numGeocodingErrors++;
-          this.appLogger.logGeocodeError(`${documentFileName}`, response.Value.GeocodeResponse);
+          this.appLogger.logGeocodeError(`${documentFileName} (${documentId})`, response.Value.GeocodeResponse);
         }
         if (response.Value.HtmlCode && response.Value.HtmlCode != 'ovIsProbablyValid') {
           this.summaryResults.numConversionErrors++;
-          this.appLogger.logConversionError(`${documentFileName} failed to convert to html`, response.Value.HtmlCode);
+          this.appLogger.logConversionError(`${documentFileName} (${documentId}) failed to convert to html`, response.Value.HtmlCode);
         }
         if (response.Value.PdfCode && response.Value.PdfCode != 'ovIsProbablyValid') {
           this.summaryResults.numConversionErrors++;
-          this.appLogger.logConversionError(`${documentFileName} failed to convert to pdf`, response.Value.PdfCode);
+          this.appLogger.logConversionError(`${documentFileName} (${documentId}) failed to convert to pdf`, response.Value.PdfCode);
         }
         if (response.Value.RtfCode && response.Value.RtfCode != 'ovIsProbablyValid') {
           this.summaryResults.numConversionErrors++;
-          this.appLogger.logConversionError(`${documentFileName} failed to convert to rtf`, response.Value.RtfCode);
+          this.appLogger.logConversionError(`${documentFileName} (${documentId}) failed to convert to rtf`, response.Value.RtfCode);
         }
 
       }).catch((err: HttpErrorResponse) => {
@@ -340,7 +347,7 @@ export class ParseComponent implements OnInit {
         this.summaryResults.numParsed++;
         this.summaryResults.numParseErrors++;
         if (err.error && err.error.Info) {
-          this.appLogger.logParseError(`${documentFileName}`, err.error.Info);
+          this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.error.Info);
           /****************************************************************************************************************************
            * Per the Acceptable Use Policy (https://docs.sovren.com/Policies/AcceptableUse), YOU MAY NOT re-submit a document to the service if
            * (1) A prior processed transaction of that document contained a return code from the Service indicating that the document was corrupt 
@@ -360,10 +367,10 @@ export class ParseComponent implements OnInit {
 
         }
         else if (err.error) {
-          this.appLogger.logParseError(`${documentFileName}`, err.error);
+          this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.error);
         }
         else {
-          this.appLogger.logParseError(`${documentFileName}`, err.message);
+          this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.message);
         }
 
         /****************************************************************************************************************************
@@ -399,6 +406,7 @@ export class ParseComponent implements OnInit {
   }
 
   async indexDocuments(requests: IndexRequest[]) {
+    this.currentlyIndexing = true;
     this.restSvc.indexDocuments(requests, this.settings.index).then((response: IndexMultipleResponse) => {
       /****************************************************************************************************************************
        * We check the result of each index transaction. Some may have had errors that we want to log
@@ -413,6 +421,7 @@ export class ParseComponent implements OnInit {
           this.appLogger.log(`${response.Value[i].DocumentId} indexed successfully`);
         }
       }
+      this.currentlyIndexing = false;
     }).catch((err: HttpErrorResponse) => {
       /****************************************************************************************************************************
        * An error here means the entire batch failed. Likely the payload was too big
@@ -427,6 +436,7 @@ export class ParseComponent implements OnInit {
       else {
         this.appLogger.logIndexError('Bulk Index Failed', err.message)
       }
+      this.currentlyIndexing = false;
     });
   }
 
@@ -495,6 +505,15 @@ export class ParseComponent implements OnInit {
 
 
 
+}
+
+class Guid {
+  static newGuid() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+          return v.toString(16);
+      });
+  }
 }
 
 
