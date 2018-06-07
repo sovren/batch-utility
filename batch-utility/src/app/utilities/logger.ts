@@ -5,6 +5,7 @@ import * as moment from 'moment';
 
 
 export class AppLogger {
+    private criticalLogger: any;
     private infoLogger: any;
     private mapLogger: any;
     private parseErrorLogger: any;
@@ -27,6 +28,18 @@ export class AppLogger {
                 args.message + ' - ' + JSON.stringify(args.meta);
             return msg;
         }
+
+        this.criticalLogger = new (winston.Logger)({
+            transports: [
+                new (winston.transports.File)({
+                    filename: `${logDirectory}/${moment().format("YYYY-MM-DD")}-critical_errors.log`,
+                    timestamp: tsFormat,
+                    maxsize: '10000000', //10MB
+                    level: 'info',
+                    json: false
+                })
+            ]
+        });
 
         this.infoLogger = new (winston.Logger)({
             transports: [

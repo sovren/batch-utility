@@ -1,7 +1,7 @@
 
 
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+import { NgModule, ErrorHandler } from '@angular/core';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NgxElectronModule } from 'ngx-electron';
@@ -24,6 +24,7 @@ import { ParseComponent } from './parse/parse.component';
 import { AppRoutingModule } from './app.routing';
 import { RestService } from './services/rest.service';
 import { AuthInterceptor } from './auth.interceptor';
+import { GlobalErrorHandler } from './global-error-handler';
 
 
 
@@ -52,6 +53,10 @@ import { AuthInterceptor } from './auth.interceptor';
     MinutesSecondsPipe
   ],
   providers: [
+    {
+      provide: ErrorHandler, 
+      useClass: GlobalErrorHandler
+    },
     RestService,
     FileSystem,
     StorageHelper,

@@ -87,7 +87,7 @@ export class ParseComponent implements OnInit {
   currentlyIndexing: boolean = false;
 
   constructor(private router: Router, private storageSvc: StorageHelper, private fileSystem: FileSystem,
-    private restSvc: RestService, public electronSvc: ElectronService, private zone: NgZone) { }
+    private restSvc: RestService, public electronSvc: ElectronService, private zone: NgZone) {  }
 
   async ngOnInit() {
     this.configuring = true;
