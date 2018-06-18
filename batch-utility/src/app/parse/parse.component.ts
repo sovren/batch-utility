@@ -84,6 +84,7 @@ export class ParseComponent implements OnInit {
   summaryResults: ParseSummaryResults = new ParseSummaryResults(); //successes, errors, num parsed, etc.
 
 
+  docsToIndex: IndexRequest[] = new Array<IndexRequest>();
   currentlyIndexing: boolean = false;
 
   constructor(private router: Router, private storageSvc: StorageHelper, private fileSystem: FileSystem,
@@ -237,7 +238,7 @@ export class ParseComponent implements OnInit {
     this.initializeOutputDirectories(); //create all required output folders 
     this.appLogger = new AppLogger(this.settings.outputDirectory);
     let conn: IConnection;
-    let docsToIndex = new Array<IndexRequest>();
+    this.docsToIndex = new Array<IndexRequest>();
 
     //start a timer to track the elapsed time and calculate docs/sec
     let startTime = Date.now();
@@ -302,14 +303,14 @@ export class ParseComponent implements OnInit {
            * When indexing, the documentID MUST only contain letters, numbers, underscores, and dashes.
            * We strip out any other characters here and replace them with an underscore.
            ****************************************************************************************************************************/
-          docsToIndex.push(new IndexRequest(documentId, response.Value.ParsedDocument));
+          this.docsToIndex.push(new IndexRequest(documentId, response.Value.ParsedDocument));
 
           /****************************************************************************************************************************
            * We index documents in batches of 50. Bigger batches will sometimes cause the payload to be too big and return a 404 error
            * Only let one index request be occuring at a time
            ****************************************************************************************************************************/
-          if (docsToIndex.length > 50 && !this.currentlyIndexing) {
-            this.indexDocuments(docsToIndex.splice(0, 50));
+          if (this.docsToIndex.length > 50 && !this.currentlyIndexing) {
+            this.indexDocuments(this.docsToIndex.splice(0, 50));
           }
         }
 
@@ -367,7 +368,13 @@ export class ParseComponent implements OnInit {
 
         }
         else if (err.error) {
-          this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.error);
+          /****************************************************************************************************************************
+           * We get an error of type ProgressEvent if the request size is too big
+           ****************************************************************************************************************************/
+          if (err.error instanceof ProgressEvent)
+            this.appLogger.logParseError(`${documentFileName} (${documentId})`, 'Parse failed. Document size is too big!');
+          else
+            this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.error);
         }
         else {
           this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.message);
@@ -392,8 +399,10 @@ export class ParseComponent implements OnInit {
     await Promise.all(results);
 
     //index remaining documents
-    if (docsToIndex.length > 0)
-      await this.indexDocuments(docsToIndex);
+    while (this.docsToIndex.length > 0) { 
+      if (!this.currentlyIndexing)
+        await this.indexDocuments(this.docsToIndex.splice(0, 50)); 
+    } 
 
     //stop the timer
     window.clearInterval(interval);
@@ -406,37 +415,44 @@ export class ParseComponent implements OnInit {
   }
 
   async indexDocuments(requests: IndexRequest[]) {
-    this.currentlyIndexing = true;
-    this.restSvc.indexDocuments(requests, this.settings.index).then((response: IndexMultipleResponse) => {
-      /****************************************************************************************************************************
-       * We check the result of each index transaction. Some may have had errors that we want to log
-       ****************************************************************************************************************************/
-      for (var i = 0; i < response.Value.length; i++) {
-        if (response.Value[i].Code != 'Success') {
-          this.summaryResults.numIndexingErrors++;
-          this.appLogger.logIndexError(`${response.Value[i].DocumentId}`, response.Value[i]);
+    return new Promise<ParseResponse>((resolve, reject) => {
+      this.currentlyIndexing = true;
+      this.restSvc.indexDocuments(requests, this.settings.index).then((response: IndexMultipleResponse) => {
+        /****************************************************************************************************************************
+         * We check the result of each index transaction. Some may have had errors that we want to log
+         ****************************************************************************************************************************/
+        for (var i = 0; i < response.Value.length; i++) {
+          if (response.Value[i].Code != 'Success') {
+            this.summaryResults.numIndexingErrors++;
+            this.appLogger.logIndexError(`${response.Value[i].DocumentId}`, response.Value[i]);
+          }
+          else {
+            this.summaryResults.numIndexed++;
+            this.appLogger.log(`${response.Value[i].DocumentId} indexed successfully`);
+          }
+        }
+        this.currentlyIndexing = false;
+        resolve();
+      }).catch((err: HttpErrorResponse) => {
+        /****************************************************************************************************************************
+         * An error here means the entire batch failed. Likely the payload was too big
+         ****************************************************************************************************************************/
+        this.summaryResults.numIndexingErrors = this.summaryResults.numIndexingErrors + requests.length;
+        if (err.error && err.error.Info) {
+          this.appLogger.logIndexError('Bulk Index Failed', err.error.Info)
+        }
+        else if (err.error) {
+          if (err.error instanceof ProgressEvent)
+            this.appLogger.logParseError('Bulk Index Failed. Request size is too big');
+          else
+            this.appLogger.logIndexError('Bulk Index Failed', err.error)
         }
         else {
-          this.summaryResults.numIndexed++;
-          this.appLogger.log(`${response.Value[i].DocumentId} indexed successfully`);
+          this.appLogger.logIndexError('Bulk Index Failed', err.message)
         }
-      }
-      this.currentlyIndexing = false;
-    }).catch((err: HttpErrorResponse) => {
-      /****************************************************************************************************************************
-       * An error here means the entire batch failed. Likely the payload was too big
-       ****************************************************************************************************************************/
-      this.summaryResults.numIndexingErrors = this.summaryResults.numIndexingErrors + requests.length;
-      if (err.error && err.error.Info) {
-        this.appLogger.logIndexError('Bulk Index Failed', err.error.Info)
-      }
-      else if (err.error) {
-        this.appLogger.logIndexError('Bulk Index Failed', err.error)
-      }
-      else {
-        this.appLogger.logIndexError('Bulk Index Failed', err.message)
-      }
-      this.currentlyIndexing = false;
+        this.currentlyIndexing = false;
+        reject(err);
+      });
     });
   }
 
