@@ -29,11 +29,26 @@
               <button class="btn btn-outline btn-sm" (click)="browseDirectory(setSource)">Browse...</button>
             </div>
             <br/>
+
+            <h2  class="center">
+              Select a local directory where you want us to save the parsed documents. Logs will be saved there too.
+            </h2>
+            <h4 class="center">
+              Note: If you have run this application previously using the same output directory, 
+              documents from the input directory that have been parsed and already exist in the output directory will be skipped.
+            </h4>
+            <br />
+            <div class="form-group">
+              <input id="outputPath" type="text" name="outputPath" [(ngModel)]="settings.outputDirectory" placeholder="Enter output path"
+                required size="100" />
+              <button class="btn btn-outline btn-sm" (click)="browseDirectory(setOutput)">Browse...</button>
+            </div>
+            <br />
             <br/>
 
 
             <button type="button" class="btn btn-primary" [routerLink]="['../Home']">Back</button>
-            <button type="button" (click)="onInputDirectorySelected()" [clrLoading]="loading" class="btn btn-primary" [disabled]="!settings.inputDirectory">Next</button>
+            <button type="button" (click)="onInputDirectorySelected()" [clrLoading]="loading" class="btn btn-primary" [disabled]="!settings.inputDirectory || !settings.outputDirectory">Next</button>
             <span *ngIf="loading">Calculating... This could take a while...</span>
 
             <div *ngIf="errorMessage != null" class="alert alert-danger">
@@ -275,15 +290,6 @@
             <h2>Thank you!
               <span class="sovren-orange"> We are almost ready to begin parsing!</span>
             </h2>
-            <h2>
-              Select a local directory where you want us to save the parsed documents. Logs will be saved there too. If your source directory
-              contains any subdirectories, we will keep the existing structure.</h2>
-            <br />
-            <div class="form-group">
-              <input id="outputPath" type="text" name="outputPath" [(ngModel)]="settings.outputDirectory" placeholder="Enter output path"
-                required size="100" />
-              <button class="btn btn-outline btn-sm" (click)="browseDirectory(setOutput)">Browse...</button>
-            </div>
 
             <h2>Our parser can return results in JSON or XML format. Please select the format you want to use below.</h2>
             <div class="form-group">
@@ -316,7 +322,7 @@
             <br/>
 
             <button type="button" class="btn btn-primary" (click)="currentStep = 6">Back</button>
-            <button type="button" (click)="checkOutputDirectory()" [clrLoading]="loading" class="btn btn-primary" [disabled]="!settings.outputDirectory">Next</button>
+            <button type="button" (click)="checkOutputDirectory()" [clrLoading]="loading" class="btn btn-primary">Next</button>
 
             <div *ngIf="errorMessage != null" class="alert alert-danger">
               <div class="alert-items">
@@ -424,9 +430,9 @@
           <label>{{account.CreditsRemaining | number: '1.0-0'}}</label>
         </div>
         <br />
-        <button type="button" class="btn btn-primary" (click)="backToSettings()">Back</button>
+        <button type="button"  *ngIf="!parsing" class="btn btn-primary" (click)="backToSettings()">Back</button>
         <button type="submit" class="btn btn-primary" *ngIf="summaryResults.numParsed == 0 && !parsing" [disabled]="summaryForm.form.invalid || (totalFiles * costPerParse) > account.CreditsRemaining">Parse!</button>
-        <button type="submit" class="btn btn-info" *ngIf="summaryResults.numParsed > 0 && !parsing && summaryResults.percentComplete != 100" [disabled]="(totalFiles * costPerParse) > account.CreditsRemaining">Restart Parsing</button>
+        <button type="submit" class="btn btn-info" *ngIf="summaryResults.numParsed > 0 && !parsing && summaryResults.percentComplete != 100" [disabled]="(totalFiles * costPerParse) > account.CreditsRemaining">Continue Parsing</button>
         <button type="button" *ngIf="summaryResults.percentComplete == 100" class="btn btn-primary" (click)="electronSvc.remote.getCurrentWindow().close()">Exit</button>
         <button type="button" *ngIf="parsing && !cancellationToken.isCancelled()" class="btn btn-info" (click)="cancellationToken.cancel()">Stop!</button>
         <span *ngIf="cancellationToken.isCancelled() && summaryResults.percentComplete != 100 && summaryResults.numParsed > 0">Parsing stopped!</span>

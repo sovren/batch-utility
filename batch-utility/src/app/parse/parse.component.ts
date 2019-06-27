@@ -26,9 +26,11 @@ import { IndexMultipleResponse } from './../models/responses/multiple-index';
 import { ParseResponse } from './../models/responses/parse';
 import { IConnection } from './../resources/connection-interface';
 import { RestService } from './../services/rest.service';
+import { DocToParse } from '../models/doc-to-parse';
 
 
 const path = (<any>window).require('path');
+const readlines = (<any>window).require('n-readlines');
 
 
 @Component({
@@ -76,7 +78,7 @@ export class ParseComponent implements OnInit {
   indexes: Index[] = new Array<Index>(); //holds lists of all users indexes
 
   //parsing summary page and results
-  filesToParse: string[] = new Array<string>(); //all files to be parsed
+  filesToParse: DocToParse[] = new Array<DocToParse>(); //all files to be parsed
   totalFiles: number = 0; //count of documents to be parsed. shown on summary page
   pool: ResourcePool; //handles async requests and pooling
   costPerParse: number = 1; //default cost for resume parsing
@@ -85,6 +87,7 @@ export class ParseComponent implements OnInit {
 
 
   docsToIndex: IndexRequest[] = new Array<IndexRequest>();
+  maxParseAttempts: number = 2;
   currentlyIndexing: boolean = false;
 
   constructor(private router: Router, private storageSvc: StorageHelper, private fileSystem: FileSystem,
@@ -190,23 +193,59 @@ export class ParseComponent implements OnInit {
     this.account = (await this.restSvc.getAccount()).Value;
     this.loading = true;
     this.filesToParse = new Array<any>();
+    this.summaryResults = new ParseSummaryResults(); 
 
     /****************************************************************************************************************************
      * This method will iterate through all files in the directory and each of it's subdirectories
      * We store the result in the filesToParse array to be used later
      ****************************************************************************************************************************/
-    this.fileSystem.getFilesInDirectory(this.settings.inputDirectory).then((fileList) => {
+    this.fileSystem.getFilesInDirectory(this.settings.inputDirectory).then(async (fileList) => {
+      await this.removeAlreadyParsedFilesFromList(this.settings.outputDirectory, fileList);
+
       this.filesToParse = fileList;
       this.loading = false;
 
       this.totalFiles = fileList.length;
       if ((this.totalFiles * this.costPerParse) > this.account.CreditsRemaining) {
         this.errorMessage = `Sorry, your account does not have enough credits to parse ${this.totalFiles.toLocaleString()} documents`;
-      }
-      else
+      } else if (this.totalFiles == 0) {
+        this.errorMessage = `There are no documents to parse in the selected input directory`;
+      } else {
         this.currentStep = 2;
+      }
     });
 
+  }
+
+  async removeAlreadyParsedFilesFromList(outputDirectory: string, fileList: DocToParse[]): Promise<void> {
+    // Check if the output directory has been used for a previous parse.
+    // If so, exclude all the documents that have already been parsed
+    const logPath = path.join(outputDirectory, 'logs');
+
+
+    if (!this.fileSystem.directoryExists(logPath)) {
+      return;
+    }
+    
+    const allLogs = await this.fileSystem.getFilesInDirectory(logPath);
+    const successLogs = allLogs.filter(l => l.docName.indexOf('-logs') >= 0);
+
+    for (let i = 0; i < successLogs.length; i++) {
+      const liner = new readlines(successLogs[i].docName);
+      let nextLine;
+      while (nextLine = liner.next()) {
+        const line = nextLine.toString();
+        if (line.indexOf(') parsed successfully') >= 0) {
+            const lineSplitBySpaces = line.split(': ')[1].split(' ');
+            lineSplitBySpaces.splice(-3); // remove last 3 values - they don't contain the filename
+            const fileName = lineSplitBySpaces.join(' '); // rejoin remaining values.
+            const index = fileList.findIndex(f => f.docName.indexOf(`${this.settings.inputDirectory}\\${fileName}`) >= 0);
+            if (index >= 0) {
+              fileList.splice(index, 1);
+            }
+        }
+      }
+    }
   }
 
   async checkOutputDirectory() {
@@ -228,13 +267,12 @@ export class ParseComponent implements OnInit {
 
   async onStartParsing() {
     this.parsing = true;
-    this.summaryResults = new ParseSummaryResults(); //reset summary results if they aren't already empty
     this.cancellationToken = new CancelationToken(); //reset cancellation token
     let result = await this.parseDocuments(this.filesToParse.slice(0), this.cancellationToken);
     this.parsing = false;
   }
 
-  async parseDocuments(documents: string[], token: CancelationToken): Promise<void> {
+  async parseDocuments(documents: DocToParse[], token: CancelationToken): Promise<void> {
     this.initializeOutputDirectories(); //create all required output folders 
     this.appLogger = new AppLogger(this.settings.outputDirectory);
     let conn: IConnection;
@@ -242,9 +280,10 @@ export class ParseComponent implements OnInit {
 
     //start a timer to track the elapsed time and calculate docs/sec
     let startTime = Date.now();
+    let startingSeconds = this.summaryResults.elapsedSeconds;
     let interval = window.setInterval(() => {
       let delta = Date.now() - startTime;
-      this.summaryResults.elapsedSeconds = Math.floor(delta / 1000)
+      this.summaryResults.elapsedSeconds = startingSeconds + Math.floor(delta / 1000)
     }, 1000);
 
     const results = [];
@@ -263,7 +302,9 @@ export class ParseComponent implements OnInit {
      * We have also implemented a cancellation token here to allow the user to stop parsing early if desired.
      ****************************************************************************************************************************/
     while (!token.isCancelled() && documents.length > 0 && (conn = await this.pool.getConnection()) && conn) {
-      let document = documents.pop();
+      let documentToParse = documents.shift();
+      let document = documentToParse.docName;
+
       /* We get filename from the full path so we can use it in our logs. Windows and Linux use different slashes so we have consider both */
       let documentFileName = document.replace(this.settings.inputDirectory.replace(/\//g, '/'), '').replace(/^\\/g, '').replace(/^\//g, '');
       /****************************************************************************************************************************
@@ -347,6 +388,8 @@ export class ParseComponent implements OnInit {
          ****************************************************************************************************************************/
         this.summaryResults.numParsed++;
         this.summaryResults.numParseErrors++;
+        this.summaryResults.percentComplete = Math.floor((this.summaryResults.numParsed * 100) / this.totalFiles); //round down so the progress bar doesn't finish early
+
         if (err.error && err.error.Info) {
           this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.error.Info);
           /****************************************************************************************************************************
@@ -362,21 +405,41 @@ export class ParseComponent implements OnInit {
            ****************************************************************************************************************************/
           if (err.error.Info.Message.indexOf('Missing FileBytes parameter in your request') >= 0 ||
             err.error.Info.Message.indexOf('ovCorrupt') >= 0 ||
-            err.error.Info.Message.indexOf('ovNoText') >= 0) {
+            err.error.Info.Message.indexOf('ovNoText') >= 0 ||
+            err.error.Info.Message.indexOf('ovUnsupportedFormat') >= 0 ||
+            err.error.Info.Message.indexOf('ovIsImage') >= 0 ||
+            err.error.Info.Message.indexOf('ovNullInput') >= 0 ||
+            err.error.Info.Message.indexOf('ovFileNotFound') >= 0 ||
+            err.error.Info.Message.indexOf('ovIsImage') >= 0 ||
+            err.error.Info.Message.indexOf('ovIsEncrypted') >= 0) {
             this.moveToDoNotProcessDirectory(document, documentFileName);
           }
 
         }
         else if (err.error) {
           /****************************************************************************************************************************
-           * We get an error of type ProgressEvent if the request size is too big
+           * We get an error of type ProgressEvent if there is a network error
            ****************************************************************************************************************************/
-          if (err.error instanceof ProgressEvent)
-            this.appLogger.logParseError(`${documentFileName} (${documentId})`, 'Parse failed. Document size is too big!');
-          else
+          if (err.error instanceof ProgressEvent) {
+            if (documentToParse.size >= 6000000) {
+              this.appLogger.logParseError(`${documentFileName} (${documentId})`, 'Parse failed. Document cannot be larger than 6MB');
+            } else {
+
+              
+              if (documentToParse.attemps < this.maxParseAttempts) {
+                // dont count this document and try it again
+                this.summaryResults.numParsed--;
+                this.summaryResults.numParseErrors--;
+                documents.push(new DocToParse(documentToParse.docName, documentToParse.size, documentToParse.attemps + 1));
+              } else {
+                this.appLogger.logNetworkError(`${documentFileName} (${documentId})`, 'Parse failed. Could not connect to the server. Your network connection may be down.');
+              }
+            }
+
+          } else {
             this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.error);
-        }
-        else {
+          }
+        } else {
           this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.message);
         }
 
@@ -400,17 +463,22 @@ export class ParseComponent implements OnInit {
 
     //index remaining documents
     while (this.docsToIndex.length > 0) { 
-      if (!this.currentlyIndexing)
-        await this.indexDocuments(this.docsToIndex.splice(0, 50)); 
+        let indexDocuments = this.docsToIndex.splice(0, 50);
+        await this.indexDocuments(indexDocuments); 
     } 
 
     //stop the timer
     window.clearInterval(interval);
+
+    // If transaction was cancelled, set files to parse to only remaining docs so it can be restarted
+    if (this.cancellationToken.isCancelled()) { 
+        this.filesToParse = documents.slice(0);
+    }
   }
 
   moveToDoNotProcessDirectory(fullPath: string, fileName: string) {
     var doNotProcessDirectory = path.join(this.settings.inputDirectory, 'FAILED AND DO NOT RESUBMIT');
-    this.fileSystem.makeDirIfNotExists(doNotProcessDirectory);
+    this.fileSystem.ensureDirectoryExistence(path.join(doNotProcessDirectory, fileName));
     this.fileSystem.moveFile(fullPath, path.join(doNotProcessDirectory, fileName));
   }
 
@@ -464,10 +532,6 @@ export class ParseComponent implements OnInit {
   // This function runs when the back button is clicked. 
   // It will cancel the ongoing parsing job
   backToSettings() {
-    if (this.parsing && !this.cancellationToken.isCancelled())
-      this.cancellationToken.cancel();
-
-    this.summaryResults = new ParseSummaryResults();
     this.currentStep = 7;
   }
 
