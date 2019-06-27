@@ -8,7 +8,6 @@ export class AppLogger {
     private criticalLogger: any;
     private infoLogger: any;
     private mapLogger: any;
-    private networkErrorLogger: any;
     private parseErrorLogger: any;
     private geocodeErrorLogger: any;
     private conversionErrorLogger: any;
@@ -69,18 +68,6 @@ export class AppLogger {
             ]
         });
 
-        this.networkErrorLogger = new (winston.Logger)({
-            transports: [
-                new (winston.transports.File)({
-                    filename: `${logDirectory}/${moment().format("YYYY-MM-DD")}-network_error.log`,
-                    timestamp: tsFormat,
-                    maxsize: '10000000', //10MB
-                    level: 'error',
-                    json: false
-                })
-            ]
-        });
-
         this.parseErrorLogger = new (winston.Logger)({
             transports: [
                 new (winston.transports.File)({
@@ -136,10 +123,6 @@ export class AppLogger {
 
     logMap(documentName, documentId) {
         this.mapLogger.info(`${documentName} = ${documentId}`);
-    }
-
-    logNetworkError(message: string, data?: any) {
-        this.networkErrorLogger.error(message, data);
     }
 
     logParseError(message: string, data?: any) {
