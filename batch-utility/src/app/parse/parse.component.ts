@@ -362,10 +362,7 @@ export class ParseComponent implements OnInit {
            ****************************************************************************************************************************/
           if (err.error.Info.Message.indexOf('Missing FileBytes parameter in your request') >= 0 ||
             err.error.Info.Message.indexOf('ovCorrupt') >= 0 ||
-            err.error.Info.Message.indexOf('ovNoText') >= 0 ||
-            err.error.Info.Message.indexOf('ovUnsupportedFormat') >= 0 ||
-            err.error.Info.Message.indexOf('ovIsImage') >= 0 ||
-            err.error.Info.Message.indexOf('ovIsEncrypted') >= 0) {
+            err.error.Info.Message.indexOf('ovNoText') >= 0) {
             this.moveToDoNotProcessDirectory(document, documentFileName);
           }
 
@@ -375,7 +372,7 @@ export class ParseComponent implements OnInit {
            * We get an error of type ProgressEvent if the request size is too big
            ****************************************************************************************************************************/
           if (err.error instanceof ProgressEvent)
-            this.appLogger.logNetworkError(`${documentFileName} (${documentId})`, 'Parse failed. Could not connect to the server. Your network connection may be down. Document will be retried at the end of the batch.');
+            this.appLogger.logParseError(`${documentFileName} (${documentId})`, 'Parse failed. Document size is too big!');
           else
             this.appLogger.logParseError(`${documentFileName} (${documentId})`, err.error);
         }
