@@ -435,7 +435,8 @@
         <button type="submit" class="btn btn-info" *ngIf="summaryResults.numParsed > 0 && !parsing && summaryResults.percentComplete != 100" [disabled]="(totalFiles * costPerParse) > account.CreditsRemaining">Continue Parsing</button>
         <button type="button" *ngIf="summaryResults.percentComplete == 100" class="btn btn-primary" (click)="electronSvc.remote.getCurrentWindow().close()">Exit</button>
         <button type="button" *ngIf="parsing && !cancellationToken.isCancelled()" class="btn btn-info" (click)="cancellationToken.cancel()">Stop!</button>
-        <span *ngIf="cancellationToken.isCancelled() && summaryResults.percentComplete != 100 && summaryResults.numParsed > 0">Parsing stopped!</span>
+        <span *ngIf="cancellationToken.isCancelled() && summaryResults.percentComplete != 100 && summaryResults.numParsed > 0 && parsing">Finishing documents in progress... do not close the app!</span>
+        <span *ngIf="cancellationToken.isCancelled() && summaryResults.percentComplete != 100 && summaryResults.numParsed > 0 && !parsing">Parsing stopped!</span>
         <span *ngIf="summaryResults.percentComplete == 100 && this.docsToIndex.length > 0">Waiting for indexing to finish...</span>
         <h4 style="display:inline" *ngIf="summaryResults.percentComplete == 100 && this.docsToIndex.length == 0">Parsing complete!</h4>
         <br />
