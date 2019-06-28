@@ -84,6 +84,7 @@ export class ParseComponent implements OnInit {
   costPerParse: number = 1; //default cost for resume parsing
   cancellationToken: CancelationToken = new CancelationToken(); //cancels parsing
   summaryResults: ParseSummaryResults = new ParseSummaryResults(); //successes, errors, num parsed, etc.
+  showParseResultsModal: boolean = false;
 
 
   docsToIndex: IndexRequest[] = new Array<IndexRequest>();
@@ -268,8 +269,10 @@ export class ParseComponent implements OnInit {
   async onStartParsing() {
     this.parsing = true;
     this.cancellationToken = new CancelationToken(); //reset cancellation token
+    this.showParseResultsModal = false;
     let result = await this.parseDocuments(this.filesToParse.slice(0), this.cancellationToken);
     this.parsing = false;
+    document.body.style.cursor = 'default';
   }
 
   async parseDocuments(documents: DocToParse[], token: CancelationToken): Promise<void> {
@@ -450,6 +453,7 @@ export class ParseComponent implements OnInit {
       results.push(result);
     }
 
+    document.body.style.cursor = 'wait';
     //wait for the last few connections to finish
     await Promise.all(results);
 
@@ -465,6 +469,8 @@ export class ParseComponent implements OnInit {
     // If transaction was cancelled, set files to parse to only remaining docs so it can be restarted
     if (this.cancellationToken.isCancelled()) { 
         this.filesToParse = documents.slice(0);
+    } else { //parsing finished
+        this.showParseResultsModal = true;
     }
   }
 
