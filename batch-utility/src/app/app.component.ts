@@ -9,8 +9,9 @@ import { ElectronService } from "ngx-electron";
     templateUrl: './app.component.html'
 })
 export class AppComponent { 
-
-    constructor(private _router: Router, private electronSvc: ElectronService){
+    year: number;
+    constructor(private _router: Router, private electronSvc: ElectronService) {
+        this.year = new Date().getFullYear();
     }
     
 }

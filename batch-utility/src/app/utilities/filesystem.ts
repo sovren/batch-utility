@@ -30,7 +30,9 @@ export class FileSystem {
                                     if (!--pending) done(null, results);
                                 });
                             } else {
-                                results.push(new DocToParse(file, stat.size, 1));
+                                if (stat.size > 0) {
+                                    results.push(new DocToParse(file, stat.size, 1));
+                                }
                                 if (!--pending) done(null, results);
                             }
                         });

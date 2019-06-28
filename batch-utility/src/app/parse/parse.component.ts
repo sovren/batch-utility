@@ -403,15 +403,7 @@ export class ParseComponent implements OnInit {
            * 
            * If a document returns one of these errors and you believe it shouldn't, please reach out to Sovren Support at support@sovren.com
            ****************************************************************************************************************************/
-          if (err.error.Info.Message.indexOf('Missing FileBytes parameter in your request') >= 0 ||
-            err.error.Info.Message.indexOf('ovCorrupt') >= 0 ||
-            err.error.Info.Message.indexOf('ovNoText') >= 0 ||
-            err.error.Info.Message.indexOf('ovUnsupportedFormat') >= 0 ||
-            err.error.Info.Message.indexOf('ovIsImage') >= 0 ||
-            err.error.Info.Message.indexOf('ovNullInput') >= 0 ||
-            err.error.Info.Message.indexOf('ovFileNotFound') >= 0 ||
-            err.error.Info.Message.indexOf('ovIsImage') >= 0 ||
-            err.error.Info.Message.indexOf('ovIsEncrypted') >= 0) {
+          if (err.error.Info.Code === "ConversionException") {
             this.moveToDoNotProcessDirectory(document, documentFileName);
           }
 
