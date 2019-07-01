@@ -29,11 +29,26 @@
               <button class="btn btn-outline btn-sm" (click)="browseDirectory(setSource)">Browse...</button>
             </div>
             <br/>
+
+            <h2  class="center">
+              Select a local directory where you want us to save the parsed documents. Logs will be saved there too.
+            </h2>
+            <h4 class="center">
+              Note: You can continue a previous batch by selecting the previous output directory. 
+              Documents from the input directory that have been parsed and exist in the output directory will be skipped.
+            </h4>
+            <br />
+            <div class="form-group">
+              <input id="outputPath" type="text" name="outputPath" [(ngModel)]="settings.outputDirectory" placeholder="Enter output path"
+                required size="100" />
+              <button class="btn btn-outline btn-sm" (click)="browseDirectory(setOutput)">Browse...</button>
+            </div>
+            <br />
             <br/>
 
 
             <button type="button" class="btn btn-primary" [routerLink]="['../Home']">Back</button>
-            <button type="button" (click)="onInputDirectorySelected()" [clrLoading]="loading" class="btn btn-primary" [disabled]="!settings.inputDirectory">Next</button>
+            <button type="button" (click)="onInputDirectorySelected()" [clrLoading]="loading" class="btn btn-primary" [disabled]="!settings.inputDirectory || !settings.outputDirectory">Next</button>
             <span *ngIf="loading">Calculating... This could take a while...</span>
 
             <div *ngIf="errorMessage != null" class="alert alert-danger">
@@ -275,15 +290,6 @@
             <h2>Thank you!
               <span class="sovren-orange"> We are almost ready to begin parsing!</span>
             </h2>
-            <h2>
-              Select a local directory where you want us to save the parsed documents. Logs will be saved there too. If your source directory
-              contains any subdirectories, we will keep the existing structure.</h2>
-            <br />
-            <div class="form-group">
-              <input id="outputPath" type="text" name="outputPath" [(ngModel)]="settings.outputDirectory" placeholder="Enter output path"
-                required size="100" />
-              <button class="btn btn-outline btn-sm" (click)="browseDirectory(setOutput)">Browse...</button>
-            </div>
 
             <h2>Our parser can return results in JSON or XML format. Please select the format you want to use below.</h2>
             <div class="form-group">
@@ -316,7 +322,7 @@
             <br/>
 
             <button type="button" class="btn btn-primary" (click)="currentStep = 6">Back</button>
-            <button type="button" (click)="checkOutputDirectory()" [clrLoading]="loading" class="btn btn-primary" [disabled]="!settings.outputDirectory">Next</button>
+            <button type="button" (click)="checkOutputDirectory()" [clrLoading]="loading" class="btn btn-primary">Next</button>
 
             <div *ngIf="errorMessage != null" class="alert alert-danger">
               <div class="alert-items">
@@ -335,10 +341,12 @@
       </form>
 
       <form #summaryForm="ngForm" (ngSubmit)="onStartParsing()" [hidden]="currentStep != 8">
-        <h2>
-          Below is a summary of all the options you have selected. Please review and
-          <span class="sovren-orange inline">when you are ready to begin parsing, click the Parse button below.</span>
-        </h2>
+        <div *ngIf="!parsing && summaryResults.numParsed == 0">
+          <h2>
+            Below is a summary of all the options you have selected. Please review and
+            <span class="sovren-orange inline">when you are ready to begin parsing, click the Parse button below.</span>
+          </h2>
+        </div>
         <br />
         <div>
           <strong>Source Path: </strong>
@@ -418,20 +426,22 @@
           <strong>Estimated Cost: </strong>
           <label>{{(totalFiles * costPerParse).toLocaleString()}} credits</label>
         </div>
+
         <br />
         <div>
           <strong>Current Credits: </strong>
           <label>{{account.CreditsRemaining | number: '1.0-0'}}</label>
         </div>
         <br />
-        <button type="button" class="btn btn-primary" (click)="backToSettings()">Back</button>
+        <button type="button"  *ngIf="!parsing" class="btn btn-primary" (click)="backToSettings()">Back</button>
         <button type="submit" class="btn btn-primary" *ngIf="summaryResults.numParsed == 0 && !parsing" [disabled]="summaryForm.form.invalid || (totalFiles * costPerParse) > account.CreditsRemaining">Parse!</button>
-        <button type="submit" class="btn btn-info" *ngIf="summaryResults.numParsed > 0 && !parsing && summaryResults.percentComplete != 100" [disabled]="(totalFiles * costPerParse) > account.CreditsRemaining">Restart Parsing</button>
+        <button type="submit" class="btn btn-info" *ngIf="summaryResults.numParsed > 0 && !parsing && summaryResults.percentComplete != 100" [disabled]="(totalFiles * costPerParse) > account.CreditsRemaining">Continue Parsing</button>
         <button type="button" *ngIf="summaryResults.percentComplete == 100" class="btn btn-primary" (click)="electronSvc.remote.getCurrentWindow().close()">Exit</button>
         <button type="button" *ngIf="parsing && !cancellationToken.isCancelled()" class="btn btn-info" (click)="cancellationToken.cancel()">Stop!</button>
-        <span *ngIf="cancellationToken.isCancelled() && summaryResults.percentComplete != 100 && summaryResults.numParsed > 0">Parsing stopped!</span>
+        <span *ngIf="cancellationToken.isCancelled() && summaryResults.percentComplete != 100 && summaryResults.numParsed > 0 && parsing">Finishing documents in progress... do not close the app!</span>
+        <span *ngIf="cancellationToken.isCancelled() && summaryResults.percentComplete != 100 && summaryResults.numParsed > 0 && !parsing">Parsing stopped!</span>
         <span *ngIf="summaryResults.percentComplete == 100 && this.docsToIndex.length > 0">Waiting for indexing to finish...</span>
-        <h4 style="display:inline" *ngIf="summaryResults.percentComplete == 100 && this.docsToIndex.length == 0">Parsing complete!</h4>
+        <h4 style="display:inline" *ngIf="summaryResults.percentComplete == 100 && this.docsToIndex.length == 0">Processing complete!</h4>
         <br />
         <br />
         <div *ngIf="parsing || summaryResults.numParsed > 0" class="progress flash labeled">
@@ -485,3 +495,25 @@
     </form>
   </div>
 </clr-modal>
+
+<clr-modal [(clrModalOpen)]="showParseResultsModal" [clrModalSize]="'lg'">
+  <h3 class="modal-title">Processing Complete!</h3>
+  <div class="modal-body">
+      <span *ngIf="summaryResults.numParsed > 0">Elapsed Time: {{summaryResults.elapsedSeconds | minutesSeconds}}</span>
+      <span class="block">Total Parsed Successfully: {{summaryResults.numParsedSuccessfully.toLocaleString()}}</span>
+      <span *ngIf="settings.index" class="block">Total Indexed Successfully: {{summaryResults.numIndexed.toLocaleString()}}</span>
+      <span class="block">Total Parsing Errors: {{summaryResults.numParseErrors.toLocaleString()}}</span>
+      <span class="block" *ngIf="summaryResults.numGeocodingErrors > 0">Total Geocoding Errors: {{summaryResults.numGeocodingErrors.toLocaleString()}}</span>
+      <span class="block" *ngIf="summaryResults.numConversionErrors > 0">Total Conversion Errors: {{summaryResults.numConversionErrors.toLocaleString()}}</span>
+      <span class="block" *ngIf="summaryResults.numIndexingErrors > 0">Total Indexing Errors: {{summaryResults.numIndexingErrors.toLocaleString()}}</span>
+      <br />
+      <span class="block" *ngIf="summaryResults.numIndexingErrors > 0 || summaryResults.numConversionErrors > 0 || summaryResults.numGeocodingErrors > 0 || summaryResults.numParseErrors > 0">
+        *Check
+        <a href="javascript:void(0)" (click)="electronSvc.shell.openItem(settings.outputDirectory + '/logs')">logs</a> to view errors</span>
+  </div>
+  <!-- <div class="modal-footer">
+      <button type="button" class="btn btn-primary" (click)="showParseResultsModal = false">Close</button>
+  </div> -->
+</clr-modal>
+
+
